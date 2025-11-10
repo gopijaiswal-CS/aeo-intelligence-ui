@@ -1,0 +1,57 @@
+[
+  {
+    "id": 1,
+    "name": "SmartHome Speaker",
+    "category": "Home Tech",
+    "visibility": 76,
+    "seoHealth": 88,
+    "brokenLinks": 2,
+    "mentions": 45,
+    "citations": 18,
+    "trend": [62, 65, 68, 71, 73, 75, 76]
+  },
+  {
+    "id": 2,
+    "name": "AI Camera",
+    "category": "Security",
+    "visibility": 65,
+    "seoHealth": 91,
+    "brokenLinks": 1,
+    "mentions": 38,
+    "citations": 15,
+    "trend": [58, 60, 62, 63, 64, 65, 65]
+  },
+  {
+    "id": 3,
+    "name": "Fitness Tracker",
+    "category": "Wearables",
+    "visibility": 59,
+    "seoHealth": 85,
+    "brokenLinks": 3,
+    "mentions": 32,
+    "citations": 12,
+    "trend": [52, 54, 55, 56, 57, 58, 59]
+  },
+  {
+    "id": 4,
+    "name": "Smart Thermostat",
+    "category": "Home Tech",
+    "visibility": 71,
+    "seoHealth": 82,
+    "brokenLinks": 4,
+    "mentions": 40,
+    "citations": 16,
+    "trend": [65, 67, 68, 69, 70, 71, 71]
+  },
+  {
+    "id": 5,
+    "name": "Wireless Earbuds",
+    "category": "Audio",
+    "visibility": 83,
+    "seoHealth": 94,
+    "brokenLinks": 0,
+    "mentions": 52,
+    "citations": 22,
+    "trend": [75, 77, 79, 80, 81, 82, 83]
+  }
+]

@@ -1,0 +1,39 @@
+{
+  "overallScore": 64,
+  "citationSources": [
+    {
+      "url": "techcrunch.com/smart-home-review",
+      "llm": "ChatGPT",
+      "weight": 8.5,
+      "mentions": 12
+    },
+    {
+      "url": "theverge.com/best-speakers-2024",
+      "llm": "Gemini",
+      "weight": 7.2,
+      "mentions": 9
+    },
+    {
+      "url": "cnet.com/smart-home-guide",
+      "llm": "Claude",
+      "weight": 9.1,
+      "mentions": 15
+    },
+    {
+      "url": "wired.com/tech-reviews",
+      "llm": "ChatGPT",
+      "weight": 6.8,
+      "mentions": 7
+    },
+    {
+      "url": "pcmag.com/product-comparison",
+      "llm": "Perplexity",
+      "weight": 7.9,
+      "mentions": 11
+    }
+  ],
+  "topMentions": 142,
+  "brokenLinksTotal": 10,
+  "avgCitationWeight": 7.9,
+  "weeklyTrend": [58, 60, 61, 62, 63, 64, 64]
+}

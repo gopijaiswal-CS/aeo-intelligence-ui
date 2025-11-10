@@ -1,0 +1,47 @@
+[
+  {
+    "id": 1,
+    "name": "Competitor A",
+    "visibility": 72,
+    "mentions": 30,
+    "citations": 12,
+    "rank": 2,
+    "category": "Home Tech"
+  },
+  {
+    "id": 2,
+    "name": "Competitor B",
+    "visibility": 67,
+    "mentions": 24,
+    "citations": 10,
+    "rank": 3,
+    "category": "Home Tech"
+  },
+  {
+    "id": 3,
+    "name": "Competitor C",
+    "visibility": 81,
+    "mentions": 38,
+    "citations": 16,
+    "rank": 1,
+    "category": "Home Tech"
+  },
+  {
+    "id": 4,
+    "name": "Competitor D",
+    "visibility": 55,
+    "mentions": 18,
+    "citations": 8,
+    "rank": 5,
+    "category": "Home Tech"
+  },
+  {
+    "id": 5,
+    "name": "Competitor E",
+    "visibility": 63,
+    "mentions": 22,
+    "citations": 9,
+    "rank": 4,
+    "category": "Home Tech"
+  }
+]
