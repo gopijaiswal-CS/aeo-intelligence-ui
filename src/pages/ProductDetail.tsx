@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { ArrowLeft, ExternalLink } from "lucide-react";
+import { ArrowLeft, ExternalLink, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -40,8 +40,16 @@ export default function ProductDetail() {
             <ArrowLeft className="h-4 w-4 mr-2" />
             Back to Dashboard
           </Button>
-          <h1 className="text-3xl font-bold mb-2">{product.name}</h1>
-          <p className="text-muted-foreground">{product.category} • Detailed Analytics</p>
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-3xl font-bold mb-2">{product.name}</h1>
+              <p className="text-muted-foreground">{product.category} • Detailed Analytics</p>
+            </div>
+            <Button onClick={() => navigate("/optimizer")} className="gap-2">
+              <Sparkles className="h-5 w-5" />
+              Optimize This Product
+            </Button>
+          </div>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

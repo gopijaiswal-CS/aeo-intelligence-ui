@@ -1,4 +1,4 @@
-import { LayoutDashboard, Package, Users, Settings, X } from "lucide-react";
+import { LayoutDashboard, Package, Users, Settings, Sparkles, X } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -12,6 +12,7 @@ const menuItems = [
   { icon: LayoutDashboard, label: "Dashboard", path: "/" },
   { icon: Package, label: "Products", path: "/products" },
   { icon: Users, label: "Competitors", path: "/competitors" },
+  { icon: Sparkles, label: "Content Optimizer", path: "/optimizer" },
   { icon: Settings, label: "Settings", path: "/settings" },
 ];
 

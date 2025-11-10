@@ -9,6 +9,7 @@ import { Sidebar } from "@/components/Sidebar";
 import Dashboard from "./pages/Dashboard";
 import ProductDetail from "./pages/ProductDetail";
 import CompetitorComparison from "./pages/CompetitorComparison";
+import ContentOptimizer from "./pages/ContentOptimizer";
 import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
 
@@ -33,6 +34,7 @@ const App = () => {
                   <Route path="/product/:id" element={<ProductDetail />} />
                   <Route path="/products" element={<Dashboard />} />
                   <Route path="/competitors" element={<CompetitorComparison />} />
+                  <Route path="/optimizer" element={<ContentOptimizer />} />
                   <Route path="/settings" element={<Settings />} />
                   <Route path="*" element={<NotFound />} />
                 </Routes>
