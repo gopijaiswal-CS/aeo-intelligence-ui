@@ -1,11 +1,221 @@
-// Update this page (the content is just a fallback if you fail to update the page)
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { motion } from "framer-motion";
+import { Search, Sparkles, TrendingUp, Award, CheckCircle } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Card } from "@/components/ui/card";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { toast } from "sonner";
+import productsData from "@/data/products.json";
 
 const Index = () => {
+  const navigate = useNavigate();
+  const [websiteUrl, setWebsiteUrl] = useState("");
+  const [selectedProduct, setSelectedProduct] = useState("");
+  const [selectedRegion, setSelectedRegion] = useState("");
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+
+  const regions = [
+    { value: "us", label: "United States" },
+    { value: "uk", label: "United Kingdom" },
+    { value: "eu", label: "European Union" },
+    { value: "asia", label: "Asia Pacific" },
+    { value: "global", label: "Global" },
+  ];
+
+  const handleStartAnalysis = async () => {
+    if (!websiteUrl || !selectedProduct || !selectedRegion) {
+      toast.error("Please fill in all fields to continue");
+      return;
+    }
+
+    setIsAnalyzing(true);
+    
+    // Simulate URL analysis
+    await new Promise(resolve => setTimeout(resolve, 2000));
+    
+    toast.success("Analysis started successfully!");
+    setIsAnalyzing(false);
+    
+    // Navigate to dashboard with context
+    navigate(`/product/${selectedProduct}`, { 
+      state: { 
+        url: websiteUrl, 
+        region: selectedRegion 
+      } 
+    });
+  };
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background">
-      <div className="text-center">
-        <h1 className="mb-4 text-4xl font-bold">Welcome to Your Blank App</h1>
-        <p className="text-xl text-muted-foreground">Start building your amazing project here!</p>
+    <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5">
+      <div className="container mx-auto px-4 py-12">
+        {/* Hero Section */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6 }}
+          className="text-center mb-12"
+        >
+          <div className="inline-flex items-center gap-2 px-4 py-2 bg-primary/10 rounded-full mb-6">
+            <Sparkles className="h-4 w-4 text-primary" />
+            <span className="text-sm font-medium text-primary">AI-Powered AEO Intelligence</span>
+          </div>
+          
+          <h1 className="text-5xl md:text-6xl font-bold mb-6 bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
+            Optimize Your Brand for
+            <br />
+            <span className="text-primary">AI Search Engines</span>
+          </h1>
+          
+          <p className="text-xl text-muted-foreground max-w-2xl mx-auto mb-12">
+            Discover how ChatGPT, Gemini, and other AI models perceive your brand. 
+            Get actionable insights to improve your Answer Engine Optimization.
+          </p>
+
+          {/* Feature Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-4xl mx-auto mb-16">
+            <Card className="p-6 border-primary/20 hover:border-primary/40 transition-colors">
+              <TrendingUp className="h-10 w-10 text-primary mb-4 mx-auto" />
+              <h3 className="font-semibold mb-2">AI Visibility Score</h3>
+              <p className="text-sm text-muted-foreground">
+                Track how often AI models mention your brand
+              </p>
+            </Card>
+            
+            <Card className="p-6 border-primary/20 hover:border-primary/40 transition-colors">
+              <Award className="h-10 w-10 text-primary mb-4 mx-auto" />
+              <h3 className="font-semibold mb-2">Citation Analysis</h3>
+              <p className="text-sm text-muted-foreground">
+                Analyze quality and weight of AI citations
+              </p>
+            </Card>
+            
+            <Card className="p-6 border-primary/20 hover:border-primary/40 transition-colors">
+              <CheckCircle className="h-10 w-10 text-primary mb-4 mx-auto" />
+              <h3 className="font-semibold mb-2">AEO Recommendations</h3>
+              <p className="text-sm text-muted-foreground">
+                Get AI-powered optimization suggestions
+              </p>
+            </Card>
+          </div>
+        </motion.div>
+
+        {/* Analysis Form */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.2 }}
+          className="max-w-3xl mx-auto"
+        >
+          <Card className="p-8 shadow-xl border-primary/10">
+            <div className="mb-6">
+              <h2 className="text-2xl font-bold mb-2">Start Your AEO Analysis</h2>
+              <p className="text-muted-foreground">
+                Enter your website URL and select a product to analyze
+              </p>
+            </div>
+
+            <div className="space-y-6">
+              <div>
+                <label className="block text-sm font-medium mb-2">
+                  Website URL
+                </label>
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                  <Input
+                    type="url"
+                    placeholder="https://yourwebsite.com"
+                    value={websiteUrl}
+                    onChange={(e) => setWebsiteUrl(e.target.value)}
+                    className="pl-10 h-12 text-lg"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-2">
+                  Select Product
+                </label>
+                <Select value={selectedProduct} onValueChange={setSelectedProduct}>
+                  <SelectTrigger className="h-12 text-lg">
+                    <SelectValue placeholder="Choose a product to analyze..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {productsData.map((product) => (
+                      <SelectItem key={product.id} value={product.id.toString()}>
+                        {product.name} ({product.category})
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-2">
+                  Target Region
+                </label>
+                <Select value={selectedRegion} onValueChange={setSelectedRegion}>
+                  <SelectTrigger className="h-12 text-lg">
+                    <SelectValue placeholder="Select target region..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {regions.map((region) => (
+                      <SelectItem key={region.value} value={region.value}>
+                        {region.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <Button
+                onClick={handleStartAnalysis}
+                disabled={isAnalyzing}
+                className="w-full h-14 text-lg gap-2"
+                size="lg"
+              >
+                {isAnalyzing ? (
+                  <>
+                    <div className="h-5 w-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    Analyzing...
+                  </>
+                ) : (
+                  <>
+                    <Sparkles className="h-5 w-5" />
+                    Start AEO Analysis
+                  </>
+                )}
+              </Button>
+
+              <div className="text-center">
+                <Button
+                  variant="link"
+                  onClick={() => navigate("/dashboard")}
+                  className="text-primary"
+                >
+                  Or view existing dashboard →
+                </Button>
+              </div>
+            </div>
+          </Card>
+        </motion.div>
+
+        {/* Trust Indicators */}
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.6, delay: 0.4 }}
+          className="mt-16 text-center text-muted-foreground"
+        >
+          <p className="text-sm mb-4">Trusted by leading brands worldwide</p>
+          <div className="flex justify-center gap-8 opacity-60">
+            <span className="text-2xl font-bold">ChatGPT</span>
+            <span className="text-2xl font-bold">Gemini</span>
+            <span className="text-2xl font-bold">Claude</span>
+            <span className="text-2xl font-bold">Perplexity</span>
+          </div>
+        </motion.div>
       </div>
     </div>
   );

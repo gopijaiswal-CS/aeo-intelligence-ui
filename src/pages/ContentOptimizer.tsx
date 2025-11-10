@@ -6,7 +6,6 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
 import productsData from "@/data/products.json";
@@ -47,23 +46,97 @@ export default function ContentOptimizer() {
     setResult(null);
 
     try {
-      const { data, error } = await supabase.functions.invoke("optimize-content", {
-        body: { productData: selectedProduct },
-      });
+      // Simulate API call delay
+      await new Promise(resolve => setTimeout(resolve, 2000));
 
-      if (error) throw error;
+      // Mock optimization results
+      const mockResult: OptimizationResult = {
+        summary: `Based on analysis of "${selectedProduct.name}", we've identified key opportunities to improve visibility and citation weight through strategic content optimization and technical improvements.`,
+        projectedScore: Math.min(selectedProduct.visibility + 15, 95),
+        recommendations: [
+          {
+            title: "Enhance Product Description with Rich Schema Markup",
+            description: "Add structured data to improve how search engines and AI understand your product features, benefits, and specifications.",
+            impact: "high",
+            difficulty: "moderate",
+            estimatedImprovement: "+5-8% visibility",
+            priority: "critical",
+            category: "technical",
+            actionItems: [
+              "Implement Product schema markup with detailed attributes",
+              "Add FAQ schema for common customer questions",
+              "Include Review/Rating schema if applicable",
+              "Validate structured data using Google's Rich Results Test"
+            ]
+          },
+          {
+            title: "Create Comprehensive Feature Comparison Content",
+            description: "Develop detailed comparison content that positions your product against alternatives, making it more likely to be cited by AI responses.",
+            impact: "high",
+            difficulty: "moderate",
+            estimatedImprovement: "+6-10% citations",
+            priority: "high",
+            category: "content",
+            actionItems: [
+              "Create side-by-side feature comparison tables",
+              "Write use-case scenarios highlighting unique advantages",
+              "Include technical specifications in a structured format",
+              "Add customer testimonials and case studies"
+            ]
+          },
+          {
+            title: "Optimize for Natural Language Queries",
+            description: "Restructure content to match how users ask questions to AI assistants, improving citation likelihood.",
+            impact: "medium",
+            difficulty: "easy",
+            estimatedImprovement: "+3-5% visibility",
+            priority: "high",
+            category: "seo",
+            actionItems: [
+              "Identify common question patterns in your niche",
+              "Rewrite key sections to directly answer these questions",
+              "Use natural, conversational language",
+              "Create an FAQ section addressing top user queries"
+            ]
+          },
+          {
+            title: "Build Authoritative Citation Sources",
+            description: "Increase the number and quality of external citations and references to your product from trusted sources.",
+            impact: "high",
+            difficulty: "hard",
+            estimatedImprovement: "+8-12% citations",
+            priority: "medium",
+            category: "citations",
+            actionItems: [
+              "Reach out to industry blogs and publications for reviews",
+              "Submit product to comparison and review platforms",
+              "Create shareable research or whitepapers",
+              "Partner with influencers and thought leaders"
+            ]
+          },
+          {
+            title: "Improve Page Load Speed and Core Web Vitals",
+            description: "Technical performance improvements that enhance user experience and search engine rankings.",
+            impact: "medium",
+            difficulty: "moderate",
+            estimatedImprovement: "+2-4% visibility",
+            priority: "medium",
+            category: "technical",
+            actionItems: [
+              "Optimize and compress product images",
+              "Implement lazy loading for below-the-fold content",
+              "Minimize JavaScript and CSS bundle sizes",
+              "Use CDN for static assets"
+            ]
+          }
+        ]
+      };
 
-      setResult(data as OptimizationResult);
+      setResult(mockResult);
       toast.success("Optimization analysis complete!");
     } catch (error: any) {
       console.error("Optimization error:", error);
-      if (error.message?.includes("429")) {
-        toast.error("Rate limit exceeded. Please try again in a moment.");
-      } else if (error.message?.includes("402")) {
-        toast.error("AI credits exhausted. Please add more credits to continue.");
-      } else {
-        toast.error("Failed to generate optimization recommendations");
-      }
+      toast.error("Failed to generate optimization recommendations");
     } finally {
       setIsAnalyzing(false);
     }

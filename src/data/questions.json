@@ -1,0 +1,183 @@
+[
+  {
+    "id": 1,
+    "question": "What are the best smart home speakers in 2024?",
+    "category": "Product Recommendation",
+    "region": "us",
+    "aiMentions": 18,
+    "visibility": 76,
+    "addedBy": "auto"
+  },
+  {
+    "id": 2,
+    "question": "Which AI camera has the best security features?",
+    "category": "Feature Comparison",
+    "region": "us",
+    "aiMentions": 15,
+    "visibility": 65,
+    "addedBy": "auto"
+  },
+  {
+    "id": 3,
+    "question": "How do fitness trackers compare in accuracy?",
+    "category": "Technical Comparison",
+    "region": "global",
+    "aiMentions": 12,
+    "visibility": 59,
+    "addedBy": "auto"
+  },
+  {
+    "id": 4,
+    "question": "What smart thermostat works best with Google Home?",
+    "category": "Compatibility",
+    "region": "us",
+    "aiMentions": 14,
+    "visibility": 71,
+    "addedBy": "auto"
+  },
+  {
+    "id": 5,
+    "question": "Which wireless earbuds have the best battery life?",
+    "category": "Feature Comparison",
+    "region": "global",
+    "aiMentions": 22,
+    "visibility": 83,
+    "addedBy": "auto"
+  },
+  {
+    "id": 6,
+    "question": "How to set up a smart home security system?",
+    "category": "How-To",
+    "region": "us",
+    "aiMentions": 10,
+    "visibility": 58,
+    "addedBy": "auto"
+  },
+  {
+    "id": 7,
+    "question": "What's the difference between budget and premium smart speakers?",
+    "category": "Price Comparison",
+    "region": "global",
+    "aiMentions": 16,
+    "visibility": 72,
+    "addedBy": "auto"
+  },
+  {
+    "id": 8,
+    "question": "Are smart home devices secure from hacking?",
+    "category": "Security",
+    "region": "global",
+    "aiMentions": 19,
+    "visibility": 68,
+    "addedBy": "auto"
+  },
+  {
+    "id": 9,
+    "question": "Which fitness tracker is best for swimming?",
+    "category": "Use Case",
+    "region": "us",
+    "aiMentions": 11,
+    "visibility": 62,
+    "addedBy": "auto"
+  },
+  {
+    "id": 10,
+    "question": "How long do smart home devices typically last?",
+    "category": "Durability",
+    "region": "global",
+    "aiMentions": 13,
+    "visibility": 64,
+    "addedBy": "auto"
+  },
+  {
+    "id": 11,
+    "question": "What are the energy-efficient smart thermostats?",
+    "category": "Efficiency",
+    "region": "eu",
+    "aiMentions": 15,
+    "visibility": 70,
+    "addedBy": "auto"
+  },
+  {
+    "id": 12,
+    "question": "Can wireless earbuds work with multiple devices?",
+    "category": "Compatibility",
+    "region": "global",
+    "aiMentions": 17,
+    "visibility": 75,
+    "addedBy": "auto"
+  },
+  {
+    "id": 13,
+    "question": "Which smart camera has cloud storage included?",
+    "category": "Features",
+    "region": "us",
+    "aiMentions": 14,
+    "visibility": 66,
+    "addedBy": "auto"
+  },
+  {
+    "id": 14,
+    "question": "How accurate are fitness tracker heart rate monitors?",
+    "category": "Technical Comparison",
+    "region": "global",
+    "aiMentions": 16,
+    "visibility": 69,
+    "addedBy": "auto"
+  },
+  {
+    "id": 15,
+    "question": "What smart home devices work without internet?",
+    "category": "Technical",
+    "region": "global",
+    "aiMentions": 9,
+    "visibility": 55,
+    "addedBy": "auto"
+  },
+  {
+    "id": 16,
+    "question": "Which smart speaker has the best voice recognition?",
+    "category": "Feature Comparison",
+    "region": "us",
+    "aiMentions": 20,
+    "visibility": 78,
+    "addedBy": "auto"
+  },
+  {
+    "id": 17,
+    "question": "Are expensive wireless earbuds worth it?",
+    "category": "Value",
+    "region": "global",
+    "aiMentions": 18,
+    "visibility": 74,
+    "addedBy": "auto"
+  },
+  {
+    "id": 18,
+    "question": "How to integrate smart home devices?",
+    "category": "How-To",
+    "region": "us",
+    "aiMentions": 12,
+    "visibility": 61,
+    "addedBy": "auto"
+  },
+  {
+    "id": 19,
+    "question": "What fitness tracker works best with iPhone?",
+    "category": "Compatibility",
+    "region": "us",
+    "aiMentions": 15,
+    "visibility": 67,
+    "addedBy": "auto"
+  },
+  {
+    "id": 20,
+    "question": "Which smart thermostat saves the most money?",
+    "category": "Cost Savings",
+    "region": "us",
+    "aiMentions": 17,
+    "visibility": 73,
+    "addedBy": "auto"
+  }
+]
+
