@@ -7,17 +7,24 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
+import { generateAEOReport } from "@/utils/reportGenerator";
+import { useProfiles } from "@/contexts/ProfileContext";
 
 interface ActionPanelProps {
   onSimulate?: () => void;
   onOptimize?: () => void;
+  profileId?: string;
 }
 
-export const ActionPanel = ({ onSimulate, onOptimize }: ActionPanelProps) => {
+export const ActionPanel = ({ onSimulate, onOptimize, profileId }: ActionPanelProps) => {
+  const { profiles } = useProfiles();
   const [showInsightsModal, setShowInsightsModal] = useState(false);
   const [showHealthModal, setShowHealthModal] = useState(false);
   const [showOptimizeModal, setShowOptimizeModal] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
+
+  // Get current profile data
+  const profile = profileId ? profiles.find(p => p.id === profileId) : null;
 
   const handleGenerateInsights = async () => {
     if (onSimulate) {
@@ -48,26 +55,35 @@ export const ActionPanel = ({ onSimulate, onOptimize }: ActionPanelProps) => {
   };
 
   const handleGenerateReport = async () => {
+    if (!profile || !profile.analysisResult) {
+      toast.error("No analysis data available. Please run analysis first.");
+      return;
+    }
+
     setIsGenerating(true);
     
-    toast.promise(
-      new Promise((resolve) => setTimeout(resolve, 2000)),
-      {
-        loading: "Generating comprehensive report...",
-        success: "Report generated successfully!",
-        error: "Failed to generate report",
-      }
-    );
-
-    await new Promise((resolve) => setTimeout(resolve, 2000));
-    
-    // Simulate PDF download
-    const link = document.createElement('a');
-    link.href = '#';
-    link.download = `AEO-Report-${new Date().toISOString().split('T')[0]}.pdf`;
-    link.click();
-    
-    setIsGenerating(false);
+    try {
+      toast.loading("Generating PDF report with charts...");
+      
+      await generateAEOReport({
+        profileName: profile.name,
+        websiteUrl: profile.websiteUrl,
+        productName: profile.productName,
+        region: profile.region,
+        analysisResult: profile.analysisResult,
+        questions: profile.questions,
+        competitors: profile.competitors,
+      });
+      
+      toast.dismiss();
+      toast.success("PDF report downloaded successfully! Check your Downloads folder.");
+    } catch (error) {
+      console.error("Report generation error:", error);
+      toast.dismiss();
+      toast.error("Failed to generate report. Please try again.");
+    } finally {
+      setIsGenerating(false);
+    }
   };
 
   const handleOptimize = async () => {

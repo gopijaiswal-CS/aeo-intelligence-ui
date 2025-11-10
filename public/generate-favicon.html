@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Generate AEO Favicon</title>
+</head>
+<body>
+    <h2>AEO Favicon Generator</h2>
+    <canvas id="canvas" width="32" height="32"></canvas>
+    <br><br>
+    <button onclick="downloadFavicon()">Download as favicon.ico</button>
+    <br><br>
+    <p>Preview:</p>
+    <img id="preview" style="width: 64px; height: 64px; image-rendering: pixelated;"/>
+
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        
+        // Fill with orange gradient background
+        const gradient = ctx.createLinearGradient(0, 0, 32, 32);
+        gradient.addColorStop(0, '#FF6B00');
+        gradient.addColorStop(1, '#FF8C3A');
+        
+        // Rounded rectangle background
+        ctx.fillStyle = gradient;
+        ctx.beginPath();
+        ctx.roundRect(0, 0, 32, 32, 4);
+        ctx.fill();
+        
+        // Draw "AEO" text
+        ctx.fillStyle = 'white';
+        ctx.font = 'bold 11px Arial';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('AEO', 16, 17);
+        
+        // Add sparkle
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
+        ctx.beginPath();
+        ctx.arc(26, 6, 1.5, 0, Math.PI * 2);
+        ctx.fill();
+        
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
+        ctx.beginPath();
+        ctx.arc(24, 5, 1, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // Show preview
+        const preview = document.getElementById('preview');
+        preview.src = canvas.toDataURL();
+        
+        function downloadFavicon() {
+            canvas.toBlob(function(blob) {
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'favicon.ico';
+                a.click();
+                URL.revokeObjectURL(url);
+            });
+        }
+        
+        // Auto-download on load
+        setTimeout(() => {
+            console.log('Favicon ready! Click the button to download.');
+        }, 100);
+    </script>
+</body>
+</html>
+

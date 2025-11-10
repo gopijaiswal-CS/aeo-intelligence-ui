@@ -36,6 +36,7 @@ import { ActionPanel } from "@/components/ActionPanel";
 import { toast } from "sonner";
 import { useProfiles } from "@/contexts/ProfileContext";
 import type { Question, Competitor } from "@/contexts/ProfileContext";
+import { generateAEOReport } from "@/utils/reportGenerator";
 
 export default function ProfileAnalysis() {
   const { id } = useParams();
@@ -184,6 +185,34 @@ export default function ProfileAnalysis() {
     toast.success("Analysis updated successfully!");
   };
 
+  const handleDownloadReport = async () => {
+    if (!profile || !profile.analysisResult) {
+      toast.error("No analysis data available. Please run analysis first.");
+      return;
+    }
+
+    try {
+      toast.loading("Generating PDF report with charts...");
+      
+      await generateAEOReport({
+        profileName: profile.name,
+        websiteUrl: profile.websiteUrl,
+        productName: profile.productName,
+        region: profile.region,
+        analysisResult: profile.analysisResult,
+        questions: profile.questions,
+        competitors: profile.competitors,
+      });
+      
+      toast.dismiss();
+      toast.success("PDF report downloaded successfully! Check your Downloads folder.");
+    } catch (error) {
+      console.error("Report generation error:", error);
+      toast.dismiss();
+      toast.error("Failed to generate report. Please try again.");
+    }
+  };
+
   const getStatusAction = () => {
     switch (profile.status) {
       case "draft":
@@ -225,7 +254,7 @@ export default function ProfileAnalysis() {
               <Edit2 className="h-4 w-4" />
               Edit & Re-run
             </Button>
-            <Button variant="outline" className="gap-2">
+            <Button onClick={handleDownloadReport} variant="outline" className="gap-2">
               <Download className="h-4 w-4" />
               Download Report
             </Button>
@@ -649,7 +678,7 @@ export default function ProfileAnalysis() {
             </Card>
 
             {/* Action Panel - New Beautiful Layout */}
-            <ActionPanel />
+            <ActionPanel profileId={profile.id} />
           </>
         ) : (
           /* Show setup/loading state */
