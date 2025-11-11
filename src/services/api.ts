@@ -128,43 +128,50 @@ export interface Profile extends CreateProfileData {
  * Create a new analysis profile
  */
 export async function createProfile(data: CreateProfileData): Promise<ApiResponse<Profile>> {
-  // TODO: Replace with actual API call
-  // return apiRequest<Profile>('/profiles', {
-  //   method: 'POST',
-  //   body: JSON.stringify(data),
-  // });
+  const response = await apiRequest<any>('/profiles', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  });
 
-  // Mock implementation
-  return {
-    success: true,
-    data: {
-      id: `prof_${Date.now()}`,
-      name: `${data.productName} Analysis`,
-      ...data,
-      status: 'draft',
-      createdAt: new Date().toISOString(),
-      lastUpdated: new Date().toISOString(),
-      questions: [],
-      competitors: [],
-    },
-  };
+  if (response.success && response.data) {
+    // Transform MongoDB _id to id for frontend compatibility
+    const profile = {
+      ...response.data,
+      id: response.data._id,
+      lastUpdated: response.data.updatedAt,
+    };
+    return {
+      success: true,
+      data: profile,
+    };
+  }
+
+  return response;
 }
 
 /**
  * Get all profiles
  */
 export async function getProfiles(): Promise<ApiResponse<{ profiles: Profile[]; total: number }>> {
-  // TODO: Replace with actual API call
-  // return apiRequest<{ profiles: Profile[]; total: number }>('/profiles');
+  const response = await apiRequest<{ profiles: any[]; total: number }>('/profiles');
 
-  // Mock: Return empty for now (uses localStorage)
-  return {
-    success: true,
-    data: {
-      profiles: [],
-      total: 0,
-    },
-  };
+  if (response.success && response.data) {
+    // Transform MongoDB _id to id for frontend compatibility
+    const profiles = response.data.profiles.map((profile: any) => ({
+      ...profile,
+      id: profile._id,
+      lastUpdated: profile.updatedAt,
+    }));
+    return {
+      success: true,
+      data: {
+        profiles,
+        total: response.data.total,
+      },
+    };
+  }
+
+  return response;
 }
 
 /**
@@ -174,25 +181,33 @@ export async function updateProfile(
   profileId: string,
   updates: Partial<Profile>
 ): Promise<ApiResponse<Profile>> {
-  // TODO: Replace with actual API call
-  // return apiRequest<Profile>(`/profiles/${profileId}`, {
-  //   method: 'PUT',
-  //   body: JSON.stringify(updates),
-  // });
+  const response = await apiRequest<any>(`/profiles/${profileId}`, {
+    method: 'PUT',
+    body: JSON.stringify(updates),
+  });
 
-  return { success: true };
+  if (response.success && response.data) {
+    const profile = {
+      ...response.data,
+      id: response.data._id,
+      lastUpdated: response.data.updatedAt,
+    };
+    return {
+      success: true,
+      data: profile,
+    };
+  }
+
+  return response;
 }
 
 /**
  * Delete profile
  */
 export async function deleteProfile(profileId: string): Promise<ApiResponse<void>> {
-  // TODO: Replace with actual API call
-  // return apiRequest<void>(`/profiles/${profileId}`, {
-  //   method: 'DELETE',
-  // });
-
-  return { success: true };
+  return apiRequest<void>(`/profiles/${profileId}`, {
+    method: 'DELETE',
+  });
 }
 
 // ============================================
@@ -210,26 +225,10 @@ export interface GenerateProductsResponse {
 export async function generateProducts(
   websiteUrl: string
 ): Promise<ApiResponse<GenerateProductsResponse>> {
-  // TODO: Replace with actual API call
-  // return apiRequest<GenerateProductsResponse>('/products/generate', {
-  //   method: 'POST',
-  //   body: JSON.stringify({ websiteUrl }),
-  // });
-
-  // Mock implementation
-  await new Promise((resolve) => setTimeout(resolve, 2000));
-
-  return {
-    success: true,
-    data: {
-      products: [
-        { id: 1, name: 'Smart Speaker Pro', category: 'Smart Home' },
-        { id: 2, name: 'Wireless Camera X', category: 'Security' },
-        { id: 3, name: 'Smart Thermostat', category: 'Smart Home' },
-      ],
-      suggestedRegions: ['us', 'eu', 'global'],
-    },
-  };
+  return apiRequest<GenerateProductsResponse>('/products/generate', {
+    method: 'POST',
+    body: JSON.stringify({ websiteUrl }),
+  });
 }
 
 // ============================================
@@ -248,42 +247,10 @@ export async function generateQuestionsAndCompetitors(
   profileId: string,
   data: { productName: string; category: string; region: string }
 ): Promise<ApiResponse<GenerateQuestionsResponse>> {
-  // TODO: Replace with actual API call
-  // return apiRequest<GenerateQuestionsResponse>(`/profiles/${profileId}/generate`, {
-  //   method: 'POST',
-  //   body: JSON.stringify(data),
-  // });
-
-  // Mock implementation
-  await new Promise((resolve) => setTimeout(resolve, 3000));
-
-  return {
-    success: true,
-    data: {
-      questions: [
-        {
-          id: 1,
-          question: `What are the best ${data.productName} options?`,
-          category: 'Product Recommendation',
-          region: data.region,
-          aiMentions: 0,
-          visibility: 0,
-          addedBy: 'auto',
-        },
-      ],
-      competitors: [
-        {
-          id: 1,
-          name: 'Competitor A',
-          category: data.category,
-          visibility: 0,
-          mentions: 0,
-          citations: 0,
-          rank: 1,
-        },
-      ],
-    },
-  };
+  return apiRequest<GenerateQuestionsResponse>(`/profiles/${profileId}/generate`, {
+    method: 'POST',
+    body: JSON.stringify(data),
+  });
 }
 
 // ============================================
@@ -297,34 +264,10 @@ export async function runAnalysis(
   profileId: string,
   data: { questions: Question[]; competitors: Competitor[] }
 ): Promise<ApiResponse<AnalysisResult>> {
-  // TODO: Replace with actual API call
-  // return apiRequest<AnalysisResult>(`/profiles/${profileId}/analyze`, {
-  //   method: 'POST',
-  //   body: JSON.stringify(data),
-  // });
-
-  // Mock implementation
-  await new Promise((resolve) => setTimeout(resolve, 4000));
-
-  return {
-    success: true,
-    data: {
-      overallScore: Math.floor(Math.random() * 30) + 60,
-      mentions: Math.floor(Math.random() * 200) + 150,
-      seoHealth: Math.floor(Math.random() * 20) + 75,
-      citations: Math.floor(Math.random() * 80) + 50,
-      brokenLinks: Math.floor(Math.random() * 5),
-      trend: [65, 68, 70, 72, 74, 75, 76],
-      citationSources: [
-        {
-          url: 'techcrunch.com',
-          llm: 'ChatGPT',
-          weight: 9.2,
-          mentions: 34,
-        },
-      ],
-    },
-  };
+  return apiRequest<AnalysisResult>(`/profiles/${profileId}/analyze`, {
+    method: 'POST',
+    body: JSON.stringify(data),
+  });
 }
 
 // ============================================
@@ -354,34 +297,10 @@ export interface OptimizationResponse {
 export async function getOptimizationRecommendations(
   profileId: string
 ): Promise<ApiResponse<OptimizationResponse>> {
-  // TODO: Replace with actual API call
-  // return apiRequest<OptimizationResponse>('/optimize/content', {
-  //   method: 'POST',
-  //   body: JSON.stringify({ profileId }),
-  // });
-
-  // Mock implementation
-  await new Promise((resolve) => setTimeout(resolve, 2000));
-
-  return {
-    success: true,
-    data: {
-      summary: 'Based on analysis, we identified key opportunities...',
-      projectedScore: 83,
-      recommendations: [
-        {
-          priority: 'CRITICAL',
-          title: 'Add Technical Specifications',
-          description: 'Include detailed specs...',
-          category: 'technical',
-          difficulty: 'Easy',
-          impact: 'High',
-          improvement: '+8% visibility',
-          actionItems: ['Add dimensions', 'Include compatibility'],
-        },
-      ],
-    },
-  };
+  return apiRequest<OptimizationResponse>('/optimize/content', {
+    method: 'POST',
+    body: JSON.stringify({ profileId }),
+  });
 }
 
 // ============================================
@@ -405,38 +324,10 @@ export interface SEOHealthResponse {
 export async function runSEOHealthCheck(
   websiteUrl: string
 ): Promise<ApiResponse<SEOHealthResponse>> {
-  // TODO: Replace with actual API call
-  // return apiRequest<SEOHealthResponse>('/seo/health-check', {
-  //   method: 'POST',
-  //   body: JSON.stringify({ websiteUrl }),
-  // });
-
-  // Mock implementation
-  await new Promise((resolve) => setTimeout(resolve, 1500));
-
-  return {
-    success: true,
-    data: {
-      overallScore: 88,
-      categories: {
-        technicalSeo: { score: 95, status: 'excellent', issues: [] },
-        onPageSeo: { score: 92, status: 'excellent', issues: [] },
-        contentQuality: {
-          score: 78,
-          status: 'good',
-          issues: ['Some pages lack depth'],
-        },
-        brokenLinks: { score: 60, status: 'warning', count: 4 },
-      },
-      actionItems: [
-        {
-          priority: 'high',
-          title: 'Fix Broken Links',
-          description: '4 links need attention',
-        },
-      ],
-    },
-  };
+  return apiRequest<SEOHealthResponse>('/seo/health-check', {
+    method: 'POST',
+    body: JSON.stringify({ websiteUrl }),
+  });
 }
 
 // ============================================
@@ -454,13 +345,8 @@ export interface GenerateReportResponse {
 export async function generateReport(
   profileId: string
 ): Promise<ApiResponse<GenerateReportResponse>> {
-  // TODO: Replace with actual API call
-  // return apiRequest<GenerateReportResponse>('/reports/generate', {
-  //   method: 'POST',
-  //   body: JSON.stringify({ profileId, format: 'pdf' }),
-  // });
-
-  // Mock implementation
+  // Note: Report generation is handled client-side via reportGenerator.ts
+  // This endpoint can be implemented later for server-side PDF generation
   await new Promise((resolve) => setTimeout(resolve, 2000));
 
   return {
