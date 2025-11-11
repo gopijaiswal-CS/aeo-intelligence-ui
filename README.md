@@ -1,73 +1,66 @@
-# Welcome to your Lovable project
+# 🧠 AEO Intelligence — AI-Powered Citation & Ranking Analyzer  
+> Built for the Contentstack Hackathon | Category: **AI Pioneers - Intelligent Experiences**
 
-## Project info
+---
 
-**URL**: https://lovable.dev/projects/6fceebe1-1bf8-4e59-830a-de2aada4826a
+## 🚀 Overview  
+**AEO Intelligence** is a smart analytics platform that helps **Contentstack users** monitor how their products appear across **AI answers, citations, and search rankings**.  
+It analyzes product visibility across competitors, generates actionable SEO suggestions, detects broken links, and provides intelligent insights into **Answer Engine Optimization (AEO)** readiness.
 
-## How can I edit this code?
+---
 
-There are several ways of editing your application.
+## 🧩 Key Features  
 
-**Use Lovable**
+### 🔍 Product & Competitor Analysis  
+- Input your **website**, **product**, and **location**.  
+- Automatically generate **5 relevant questions** about your product.  
+- Optionally add **custom questions** and **competitors**.  
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/6fceebe1-1bf8-4e59-830a-de2aada4826a) and start prompting.
+### 🤖 LLM Visibility Engine  
+- Simulate multiple LLM responses (mocked for now).  
+- Detect how often your brand or competitors appear in answers.  
+- Analyze **citation weight**, **ranking position**, and **source credibility**.
 
-Changes made via Lovable will be committed automatically to this repo.
+### 📊 Interactive Dashboard  
+Includes:
+- **Donut Chart** → Visibility & appearance ratio.  
+- **Comparison Table** → Brand vs Competitors across queries.  
+- **Bar/Line Charts** → Keyword ranking, citation trends, and SEO score evolution.
 
-**Use your preferred IDE**
+### 🧠 Smart Recommendations  
+- SEO & AEO suggestions based on ranking data.  
+- Auto-generated **content improvement prompts** using LLM (mocked).  
+- Detect and report **broken sitemap links** or missing meta tags.
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+### 🧰 Built With Productivity & Scale  
+- Modular components for easy extension.
+- Built to plug into **Contentstack** in future via APIs and SDKs.  
+- Mock data layer allows quick demo-ready deployment.
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+---
 
-Follow these steps:
+## 🏗️ Tech Stack
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+| Layer | Technology |
+|-------|-------------|
+| **Frontend** | Next.js 15 (App Router) + TypeScript |
+| **Styling** | Tailwind CSS + Shadcn/UI |
+| **Charts** | Recharts (Donut, Line, Bar) |
+| **State Management** | Zustand or React Context |
+| **Mock Backend** | Local JSON data or Mirage.js |
+| **Optional LLM Simulation** | OpenAI mock adapter for testing |
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+---
 
-# Step 3: Install the necessary dependencies.
-npm i
+## ⚙️ Project Flow  
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
-```
-
-**Edit a file directly in GitHub**
-
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
-
-**Use GitHub Codespaces**
-
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
-
-## What technologies are used for this project?
-
-This project is built with:
-
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
-
-## How can I deploy this project?
-
-Simply open [Lovable](https://lovable.dev/projects/6fceebe1-1bf8-4e59-830a-de2aada4826a) and click on Share -> Publish.
-
-## Can I connect a custom domain to my Lovable project?
-
-Yes, you can!
-
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
-
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+```mermaid
+flowchart TD
+A[Enter Website URL] --> B[Auto-generate 5 Questions]
+B --> C[Select Product & Location]
+C --> D[Add Custom Questions/Competitors]
+D --> E[Run AEO Engine Simulation]
+E --> F[Analyze Rankings & Citations]
+F --> G[Display Charts & Tables]
+G --> H[Generate SEO/AEO Suggestions]
+H --> I[Export Report or Re-run Analysis]
