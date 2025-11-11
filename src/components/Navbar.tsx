@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Search, Bell, Settings, Menu, TrendingUp, AlertCircle, CheckCircle, X, LayoutDashboard, ArrowLeft } from "lucide-react";
+import { Search, Bell, Settings, Menu, TrendingUp, AlertCircle, CheckCircle, X, LayoutDashboard } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -111,27 +111,9 @@ export const Navbar = ({ onMenuClick }: NavbarProps) => {
     }
   };
 
-  const showBackButton = location.pathname !== "/" && location.pathname !== "/dashboard";
-
-  const handleBack = () => {
-    navigate(-1);
-  };
-
   return (
     <nav className="sticky top-0 z-50 w-full border-b border-border bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/60">
       <div className="flex h-16 items-center px-4 lg:px-6">
-        {/* Back Button - Shows on all pages except dashboard */}
-        {showBackButton && (
-          <Button
-            variant="ghost"
-            size="icon"
-            className="mr-2"
-            onClick={handleBack}
-          >
-            <ArrowLeft className="h-5 w-5" />
-          </Button>
-        )}
-
         <div className="flex items-center gap-2 mr-4">
           <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
             <span className="text-primary-foreground font-bold text-sm">AEO</span>

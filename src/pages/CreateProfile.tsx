@@ -259,7 +259,7 @@ export default function CreateProfile() {
     setCurrentStep(2);
   };
 
-  const handleSelectProductAndRegion = () => {
+  const handleSelectProductAndRegion = async () => {
     if (!selectedProduct || !selectedRegion) {
       toast.error("Please select both product and region");
       return;
@@ -269,7 +269,12 @@ export default function CreateProfile() {
     if (!product) return;
 
     // Create profile
-    const newProfile = createProfile(websiteUrl, product.name, product.category, selectedRegion);
+    const newProfile = await createProfile(websiteUrl, product.name, product.category, selectedRegion);
+    if (!newProfile) {
+      toast.error("Failed to create profile");
+      return;
+    }
+    
     setCreatedProfileId(newProfile.id);
     
     toast.success("Profile created! Generating questions and competitors...");

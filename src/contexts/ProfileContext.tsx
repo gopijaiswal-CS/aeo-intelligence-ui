@@ -1,4 +1,6 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
+import * as api from "@/services/api";
+import { toast } from "sonner";
 
 export interface Question {
   id: number;
@@ -27,7 +29,7 @@ export interface AnalysisResult {
   citations: number;
   brokenLinks: number;
   trend: number[];
-  lastAnalyzed: string;
+  lastAnalyzed?: string;
   citationSources: Array<{
     url: string;
     llm: string;
@@ -54,9 +56,10 @@ export interface Profile {
 interface ProfileContextType {
   profiles: Profile[];
   currentProfile: Profile | null;
-  createProfile: (websiteUrl: string, productName: string, category: string, region: string) => Profile;
-  updateProfile: (id: string, updates: Partial<Profile>) => void;
-  deleteProfile: (id: string) => void;
+  isLoading: boolean;
+  createProfile: (websiteUrl: string, productName: string, category: string, region: string) => Promise<Profile | null>;
+  updateProfile: (id: string, updates: Partial<Profile>) => Promise<void>;
+  deleteProfile: (id: string) => Promise<void>;
   setCurrentProfile: (id: string | null) => void;
   generateQuestionsAndCompetitors: (profileId: string) => Promise<void>;
   runAnalysis: (profileId: string) => Promise<void>;
@@ -67,59 +70,98 @@ const ProfileContext = createContext<ProfileContextType | undefined>(undefined);
 export const ProfileProvider = ({ children }: { children: ReactNode }) => {
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [currentProfile, setCurrentProfileState] = useState<Profile | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
 
-  // Load profiles from localStorage on mount
+  // Load profiles from API on mount
   useEffect(() => {
-    const savedProfiles = localStorage.getItem("aeo-profiles");
-    if (savedProfiles) {
-      setProfiles(JSON.parse(savedProfiles));
-    }
+    loadProfiles();
   }, []);
 
-  // Save profiles to localStorage whenever they change
-  useEffect(() => {
-    if (profiles.length > 0) {
-      localStorage.setItem("aeo-profiles", JSON.stringify(profiles));
-    }
-  }, [profiles]);
-
-  const createProfile = (websiteUrl: string, productName: string, category: string, region: string): Profile => {
-    const newProfile: Profile = {
-      id: `profile-${Date.now()}`,
-      name: `${productName} Analysis`,
-      websiteUrl,
-      productName,
-      category,
-      region,
-      createdAt: new Date().toISOString(),
-      lastUpdated: new Date().toISOString(),
-      status: "draft",
-      questions: [],
-      competitors: [],
-    };
-
-    setProfiles((prev) => [...prev, newProfile]);
-    return newProfile;
-  };
-
-  const updateProfile = (id: string, updates: Partial<Profile>) => {
-    setProfiles((prev) =>
-      prev.map((profile) =>
-        profile.id === id
-          ? { ...profile, ...updates, lastUpdated: new Date().toISOString() }
-          : profile
-      )
-    );
-
-    if (currentProfile?.id === id) {
-      setCurrentProfileState((prev) => prev ? { ...prev, ...updates } : null);
+  const loadProfiles = async () => {
+    setIsLoading(true);
+    try {
+      const response = await api.getProfiles();
+      if (response.success && response.data) {
+        setProfiles(response.data.profiles);
+      } else {
+        console.error("Failed to load profiles:", response.error);
+        toast.error("Failed to load profiles");
+      }
+    } catch (error) {
+      console.error("Error loading profiles:", error);
+      toast.error("Error loading profiles");
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  const deleteProfile = (id: string) => {
-    setProfiles((prev) => prev.filter((profile) => profile.id !== id));
-    if (currentProfile?.id === id) {
-      setCurrentProfileState(null);
+  const createProfile = async (websiteUrl: string, productName: string, category: string, region: string): Promise<Profile | null> => {
+    try {
+      const response = await api.createProfile({
+        websiteUrl,
+        productName,
+        category,
+        region,
+      });
+
+      if (response.success && response.data) {
+        const newProfile = response.data;
+        setProfiles((prev) => [...prev, newProfile]);
+        toast.success("Profile created successfully!");
+        return newProfile;
+      } else {
+        toast.error(response.error?.message || "Failed to create profile");
+        return null;
+      }
+    } catch (error: any) {
+      console.error("Error creating profile:", error);
+      toast.error("Error creating profile");
+      return null;
+    }
+  };
+
+  const updateProfile = async (id: string, updates: Partial<Profile>): Promise<void> => {
+    try {
+      // Update locally first for immediate UI feedback
+      setProfiles((prev) =>
+        prev.map((profile) =>
+          profile.id === id
+            ? { ...profile, ...updates, lastUpdated: new Date().toISOString() }
+            : profile
+        )
+      );
+
+      if (currentProfile?.id === id) {
+        setCurrentProfileState((prev) => prev ? { ...prev, ...updates } : null);
+      }
+
+      // Then update on server
+      const response = await api.updateProfile(id, updates);
+      if (!response.success) {
+        console.error("Failed to update profile on server:", response.error);
+        // Optionally revert changes or show warning
+      }
+    } catch (error) {
+      console.error("Error updating profile:", error);
+    }
+  };
+
+  const deleteProfile = async (id: string): Promise<void> => {
+    try {
+      const response = await api.deleteProfile(id);
+      
+      if (response.success) {
+        setProfiles((prev) => prev.filter((profile) => profile.id !== id));
+        if (currentProfile?.id === id) {
+          setCurrentProfileState(null);
+        }
+        toast.success("Profile deleted successfully!");
+      } else {
+        toast.error(response.error?.message || "Failed to delete profile");
+      }
+    } catch (error: any) {
+      console.error("Error deleting profile:", error);
+      toast.error("Error deleting profile");
     }
   };
 
@@ -207,6 +249,7 @@ export const ProfileProvider = ({ children }: { children: ReactNode }) => {
       value={{
         profiles,
         currentProfile,
+        isLoading,
         createProfile,
         updateProfile,
         deleteProfile,
