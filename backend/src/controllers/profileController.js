@@ -1,6 +1,7 @@
 const Profile = require('../models/Profile');
 const { generateQuestionsAndCompetitors } = require('../services/geminiService');
 const { runAEOAnalysis } = require('../services/analysisService');
+const NotificationService = require('../services/notificationService');
 
 /**
  * Create a new profile
@@ -30,6 +31,9 @@ exports.createProfile = async (req, res) => {
       region,
       status: 'draft'
     });
+
+    // Create notification
+    await NotificationService.notifyProfileCreated(profile);
 
     res.status(201).json({
       success: true,
@@ -215,6 +219,13 @@ exports.generateQuestionsAndCompetitors = async (req, res) => {
     profile.competitors = competitors;
     profile.status = 'ready';
     await profile.save();
+
+    // Create notification
+    await NotificationService.notifyQuestionsGenerated(
+      profile,
+      questions.length,
+      competitors.length
+    );
 
     res.json({
       success: true,

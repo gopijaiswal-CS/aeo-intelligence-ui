@@ -6,6 +6,7 @@ const productRoutes = require('./productRoutes');
 const optimizationRoutes = require('./optimizationRoutes');
 const seoRoutes = require('./seoRoutes');
 const settingsRoutes = require('./settingsRoutes');
+const notificationRoutes = require('./notificationRoutes');
 
 // Mount routes
 router.use('/profiles', profileRoutes);
@@ -13,6 +14,7 @@ router.use('/products', productRoutes);
 router.use('/optimize', optimizationRoutes);
 router.use('/seo', seoRoutes);
 router.use('/settings', settingsRoutes);
+router.use('/notifications', notificationRoutes);
 
 // Health check endpoint
 router.get('/health', (req, res) => {

@@ -419,6 +419,90 @@ export async function resetSettings(): Promise<ApiResponse<UserSettings>> {
 }
 
 // Export all functions
+// ============================================
+// 9. NOTIFICATIONS
+// ============================================
+
+export interface Notification {
+  _id: string;
+  userId: string;
+  type: 'profile_created' | 'analysis_complete' | 'score_improvement' | 'score_drop' | 
+        'competitor_update' | 'broken_link' | 'questions_generated' | 'report_ready' | 
+        'system' | 'warning' | 'error';
+  title: string;
+  message: string;
+  profileId?: string;
+  profileName?: string;
+  metadata: any;
+  isRead: boolean;
+  priority: 'low' | 'medium' | 'high' | 'urgent';
+  actionUrl?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface NotificationsResponse {
+  notifications: Notification[];
+  unreadCount: number;
+  total: number;
+}
+
+/**
+ * Get all notifications
+ */
+export async function getNotifications(
+  limit = 50,
+  skip = 0,
+  unreadOnly = false
+): Promise<ApiResponse<NotificationsResponse>> {
+  return apiRequest<NotificationsResponse>(
+    `/notifications?limit=${limit}&skip=${skip}&unreadOnly=${unreadOnly}`
+  );
+}
+
+/**
+ * Get unread notification count
+ */
+export async function getUnreadCount(): Promise<ApiResponse<{ count: number }>> {
+  return apiRequest<{ count: number }>('/notifications/unread-count');
+}
+
+/**
+ * Mark notification as read
+ */
+export async function markNotificationAsRead(id: string): Promise<ApiResponse<Notification>> {
+  return apiRequest<Notification>(`/notifications/${id}/read`, {
+    method: 'PUT',
+  });
+}
+
+/**
+ * Mark all notifications as read
+ */
+export async function markAllNotificationsAsRead(): Promise<ApiResponse<{ modifiedCount: number }>> {
+  return apiRequest<{ modifiedCount: number }>('/notifications/read-all', {
+    method: 'PUT',
+  });
+}
+
+/**
+ * Delete a notification
+ */
+export async function deleteNotification(id: string): Promise<ApiResponse<{ message: string }>> {
+  return apiRequest<{ message: string }>(`/notifications/${id}`, {
+    method: 'DELETE',
+  });
+}
+
+/**
+ * Delete all notifications
+ */
+export async function deleteAllNotifications(): Promise<ApiResponse<{ deletedCount: number }>> {
+  return apiRequest<{ deletedCount: number }>('/notifications', {
+    method: 'DELETE',
+  });
+}
+
 export default {
   createProfile,
   getProfiles,
@@ -433,5 +517,11 @@ export default {
   getSettings,
   updateSettings,
   resetSettings,
+  getNotifications,
+  getUnreadCount,
+  markNotificationAsRead,
+  markAllNotificationsAsRead,
+  deleteNotification,
+  deleteAllNotifications,
 };
 
