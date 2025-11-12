@@ -1,4 +1,5 @@
 const Profile = require('../models/Profile');
+const { generateEnhancedLLMText } = require('../services/llmTextService');
 
 /**
  * Generate llm.txt file for a profile
@@ -30,8 +31,8 @@ exports.generateLLMText = async (req, res) => {
       });
     }
 
-    // Generate llm.txt content
-    const llmTextContent = generateLLMTextContent(profile);
+    // Generate enhanced llm.txt content with real website analysis
+    const llmTextContent = await generateEnhancedLLMText(profile);
 
     res.json({
       success: true,
