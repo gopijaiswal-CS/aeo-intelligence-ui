@@ -1,4 +1,4 @@
-const { runSEOHealthCheck } = require('../services/analysisService');
+const { runSEOHealthCheck } = require('../services/seoHealthService');
 
 /**
  * Run SEO health check

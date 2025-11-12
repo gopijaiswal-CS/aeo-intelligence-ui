@@ -503,6 +503,26 @@ export async function deleteAllNotifications(): Promise<ApiResponse<{ deletedCou
   });
 }
 
+// ============================================
+// 10. LLM.TXT GENERATOR
+// ============================================
+
+export interface LLMTextResponse {
+  content: string;
+  filename: string;
+  generatedAt: string;
+}
+
+/**
+ * Generate llm.txt file for a profile
+ */
+export async function generateLLMText(profileId: string): Promise<ApiResponse<LLMTextResponse>> {
+  return apiRequest<LLMTextResponse>('/llm-text/generate', {
+    method: 'POST',
+    body: JSON.stringify({ profileId }),
+  });
+}
+
 export default {
   createProfile,
   getProfiles,
@@ -523,5 +543,6 @@ export default {
   markAllNotificationsAsRead,
   deleteNotification,
   deleteAllNotifications,
+  generateLLMText,
 };
 

@@ -249,7 +249,7 @@ async function getOptimizationRecommendations(profileData) {
   try {
     const model = getModel();
 
-    const prompt = `Analyze this product and provide 5 detailed content optimization recommendations to improve AI visibility and citation weight.
+    const prompt = `Analyze this websiteUrl and product and provide 5 detailed content optimization recommendations to improve AI visibility and citation weight.
 
 Product: ${profileData.productName}
 Category: ${profileData.category}
