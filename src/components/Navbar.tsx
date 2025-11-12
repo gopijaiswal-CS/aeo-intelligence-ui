@@ -115,10 +115,21 @@ export const Navbar = ({ onMenuClick }: NavbarProps) => {
     <nav className="sticky top-0 z-50 w-full border-b border-border bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/60">
       <div className="flex h-16 items-center px-4 lg:px-6">
         <div className="flex items-center gap-2 mr-4">
-          <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
-            <span className="text-primary-foreground font-bold text-sm">AEO</span>
+          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-orange-500 via-orange-400 to-blue-500 flex items-center justify-center relative overflow-hidden">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <g transform="translate(12, 10)">
+                <rect x="-5" y="5" width="10" height="1.5" rx="0.5" fill="white" opacity="0.5"/>
+                <rect x="-4.5" y="2.5" width="9" height="1.5" rx="0.5" fill="white" opacity="0.7"/>
+                <rect x="-4" y="0" width="8" height="1.5" rx="0.5" fill="white" opacity="0.95"/>
+                <circle cx="0" cy="-3" r="2.5" fill="white" opacity="0.95"/>
+                <path d="M -1.2,-3.8 Q -1.5,-4.5 -0.8,-5 Q 0,-5.3 0.8,-5 Q 1.5,-4.5 1.2,-3.8 Q 0.8,-3 0,-2.8 Q -0.8,-3 -1.2,-3.8 Z" 
+                      fill="#3B82F6" opacity="0.9"/>
+                <circle cx="-0.6" cy="-3.5" r="0.4" fill="#F97316"/>
+                <circle cx="0.6" cy="-3.5" r="0.4" fill="#F97316"/>
+              </g>
+            </svg>
           </div>
-          <span className="font-semibold text-lg hidden sm:inline">AEO Intelligence</span>
+          <span className="font-semibold text-lg hidden sm:inline bg-gradient-to-r from-orange-500 via-orange-400 to-blue-500 bg-clip-text text-transparent">StackIQ</span>
         </div>
 
         <div className="flex-1 max-w-md mx-4">

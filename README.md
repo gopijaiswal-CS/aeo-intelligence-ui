@@ -1,11 +1,11 @@
-# 🧠 AEO Intelligence — AI-Powered Citation & Ranking Analyzer  
+# 📊 StackIQ — Competitive Intelligence for AI Visibility  
 > Built for the Contentstack Hackathon | Category: **AI Pioneers - Intelligent Experiences**
 
 ---
 
 ## 🚀 Overview  
-**AEO Intelligence** is a smart analytics platform that helps **Contentstack users** monitor how their products appear across **AI answers, citations, and search rankings**.  
-It analyzes product visibility across competitors, generates actionable SEO suggestions, detects broken links, and provides intelligent insights into **Answer Engine Optimization (AEO)** readiness.
+**StackIQ** is a competitive intelligence platform that helps companies **stack their insights** and understand how their products rank against competitors in **AI model responses** like ChatGPT, Claude, and Gemini.  
+It provides comprehensive competitive analysis, citation source breakdowns, and actionable recommendations to **dominate AI search results** and improve **Answer Engine Optimization (AEO)**.
 
 ---
 

@@ -1,5 +1,5 @@
 /**
- * AEO Intelligence Report Generator
+ * StackIQ Report Generator
  * Generates PDF reports with charts and analytics
  */
 
@@ -44,7 +44,7 @@ async function createChartImage(config: ChartConfiguration, width: number, heigh
   return imageData;
 }
 
-export async function generateAEOReport(data: ReportData): Promise<void> {
+export async function generateStackIQReport(data: ReportData): Promise<void> {
   const pdf = new jsPDF({
     orientation: 'portrait',
     unit: 'mm',
@@ -68,7 +68,7 @@ export async function generateAEOReport(data: ReportData): Promise<void> {
   pdf.setTextColor(255, 255, 255);
   pdf.setFontSize(32);
   pdf.setFont('helvetica', 'bold');
-  pdf.text('AEO INTELLIGENCE', pageWidth / 2, 25, { align: 'center' });
+  pdf.text('STACKIQ', pageWidth / 2, 25, { align: 'center' });
 
   pdf.setFontSize(14);
   pdf.setFont('helvetica', 'normal');
@@ -502,13 +502,13 @@ export async function generateAEOReport(data: ReportData): Promise<void> {
   // Footer with branding
   pdf.setFontSize(11);
   pdf.setTextColor(153, 153, 153);
-  pdf.text('AEO Intelligence Platform', pageWidth / 2, pageHeight - 30, { align: 'center' });
+  pdf.text('StackIQ Platform', pageWidth / 2, pageHeight - 30, { align: 'center' });
 
   pdf.setFontSize(9);
   pdf.setTextColor(187, 187, 187);
   pdf.text('Dominate AI Search Results', pageWidth / 2, pageHeight - 22, { align: 'center' });
 
   // Generate and download
-  const fileName = `AEO_Report_${data.productName.replace(/\s+/g, '_')}_${new Date().toISOString().split('T')[0]}.pdf`;
+  const fileName = `StackIQ_Report_${data.productName.replace(/\s+/g, '_')}_${new Date().toISOString().split('T')[0]}.pdf`;
   pdf.save(fileName);
 }

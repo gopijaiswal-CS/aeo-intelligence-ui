@@ -36,7 +36,7 @@ import { ActionPanel } from "@/components/ActionPanel";
 import { toast } from "sonner";
 import { useProfiles } from "@/contexts/ProfileContext";
 import type { Question, Competitor } from "@/contexts/ProfileContext";
-import { generateAEOReport } from "@/utils/reportGenerator";
+import { generateStackIQReport } from "@/utils/reportGenerator";
 
 export default function ProfileAnalysis() {
   const { id } = useParams();
@@ -194,7 +194,7 @@ export default function ProfileAnalysis() {
     try {
       toast.loading("Generating PDF report with charts...");
       
-      await generateAEOReport({
+      await generateStackIQReport({
         profileName: profile.name,
         websiteUrl: profile.websiteUrl,
         productName: profile.productName,

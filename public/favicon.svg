@@ -1,21 +1,39 @@
 <svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <!-- Background with gradient -->
-  <rect width="64" height="64" rx="12" fill="url(#gradient)"/>
-  
-  <!-- Gradient definition -->
+  <!-- Gradient definitions - Orange to Blue for AI theme -->
   <defs>
-    <linearGradient id="gradient" x1="0" y1="0" x2="64" y2="64" gradientUnits="userSpaceOnUse">
-      <stop offset="0%" stop-color="#FF6B00"/>
-      <stop offset="100%" stop-color="#FF8C3A"/>
+    <linearGradient id="bgGradient" x1="0" y1="0" x2="64" y2="64" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#F97316"/>
+      <stop offset="50%" stop-color="#FB923C"/>
+      <stop offset="100%" stop-color="#3B82F6"/>
+    </linearGradient>
+    <linearGradient id="stackGradient" x1="0" y1="0" x2="0" y2="20" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="1"/>
+      <stop offset="100%" stop-color="#e0e7ff" stop-opacity="0.9"/>
     </linearGradient>
   </defs>
   
-  <!-- AEO Text -->
-  <text x="32" y="42" font-family="Arial, sans-serif" font-size="24" font-weight="bold" fill="white" text-anchor="middle">AEO</text>
+  <!-- Background -->
+  <rect width="64" height="64" rx="12" fill="url(#bgGradient)"/>
   
-  <!-- Sparkle/Star accent -->
-  <circle cx="52" cy="16" r="3" fill="white" opacity="0.9"/>
-  <circle cx="48" cy="12" r="2" fill="white" opacity="0.7"/>
-  <circle cx="56" cy="12" r="1.5" fill="white" opacity="0.8"/>
+  <!-- Stack layers (3 layers representing intelligence stacking) -->
+  <g transform="translate(32, 28)">
+    <!-- Bottom layer -->
+    <rect x="-14" y="12" width="28" height="4" rx="1" fill="url(#stackGradient)" opacity="0.5"/>
+    <!-- Middle layer -->
+    <rect x="-12" y="6" width="24" height="4" rx="1" fill="url(#stackGradient)" opacity="0.7"/>
+    <!-- Top layer -->
+    <rect x="-10" y="0" width="20" height="4" rx="1" fill="url(#stackGradient)" opacity="0.95"/>
+    
+    <!-- IQ brain/lightbulb icon -->
+    <circle cx="0" cy="-8" r="6" fill="white" opacity="0.95"/>
+    <path d="M -3,-10 Q -4,-12 -2,-13 Q 0,-14 2,-13 Q 4,-12 3,-10 Q 2,-8 0,-7 Q -2,-8 -3,-10 Z" 
+          fill="#3B82F6" opacity="0.9"/>
+    <circle cx="-1.5" cy="-9.5" r="0.8" fill="#F97316"/>
+    <circle cx="1.5" cy="-9.5" r="0.8" fill="#F97316"/>
+  </g>
+  
+  <!-- Data point accents -->
+  <circle cx="52" cy="14" r="1.5" fill="white" opacity="0.7"/>
+  <circle cx="56" cy="18" r="1" fill="white" opacity="0.6"/>
+  <circle cx="10" cy="52" r="1.2" fill="white" opacity="0.6"/>
 </svg>
-

@@ -136,8 +136,8 @@ export default function Dashboard() {
               <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 text-primary text-sm font-medium mb-4">
                 <Sparkles className="h-4 w-4" />
                 Answer Engine Optimization Platform
-              </div>
-              
+        </div>
+
               <h1 className="text-5xl md:text-6xl font-bold bg-gradient-to-r from-primary via-purple-600 to-orange-600 bg-clip-text text-transparent">
                 Dominate AI Search Results
               </h1>
@@ -297,7 +297,7 @@ export default function Dashboard() {
                   Ready to Optimize Your AI Visibility?
                 </h2>
                 <p className="text-muted-foreground mb-8 max-w-2xl mx-auto">
-                  Join companies using AEO Intelligence to dominate AI search results and stay ahead of competitors
+                  Join companies using StackIQ to stack competitive intelligence, dominate AI search results, and outrank competitors
                 </p>
                 <Button
                   onClick={() => navigate("/create-profile")}
@@ -389,7 +389,7 @@ export default function Dashboard() {
                       <Calendar className="h-3 w-3" />
                       <span>{formatDate(profile.lastUpdated)}</span>
                     </div>
-                  </div>
+        </div>
 
                   {/* Action Buttons */}
                   <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-3">
