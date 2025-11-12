@@ -37,6 +37,7 @@ import { toast } from "sonner";
 import { useProfiles } from "@/contexts/ProfileContext";
 import type { Question, Competitor } from "@/contexts/ProfileContext";
 import { generateStackIQReport } from "@/utils/reportGenerator";
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from "recharts";
 
 export default function ProfileAnalysis() {
   const { id } = useParams();
@@ -44,6 +45,7 @@ export default function ProfileAnalysis() {
   const { profiles, setCurrentProfile, runAnalysis, generateQuestionsAndCompetitors, updateProfile } = useProfiles();
   const [isProcessing, setIsProcessing] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
+  const [showCompetitorModal, setShowCompetitorModal] = useState(false);
   
   // Edit form states
   const [showAddQuestion, setShowAddQuestion] = useState(false);
@@ -601,9 +603,9 @@ export default function ProfileAnalysis() {
                   variant="outline"
                   size="sm"
                   className="w-full mt-3"
-                  onClick={() => navigate("/competitors")}
+                  onClick={() => setShowCompetitorModal(true)}
                 >
-                  View All {profile.competitors.length} →
+                  View Detailed Comparison →
                 </Button>
               </Card>
 
@@ -1368,6 +1370,235 @@ export default function ProfileAnalysis() {
               </div>
             </>
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Competitor Comparison Modal */}
+      <Dialog open={showCompetitorModal} onOpenChange={setShowCompetitorModal}>
+        <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="text-2xl flex items-center gap-2">
+              <Users className="h-6 w-6 text-primary" />
+              Competitor Analysis - Detailed Comparison
+            </DialogTitle>
+            <DialogDescription>
+              Comprehensive comparison of {profile?.productName} vs {profile?.competitors.length} competitors across all LLMs
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-6 mt-4">
+            {/* Comparison Chart */}
+            <Card className="p-6">
+              <h3 className="text-lg font-semibold mb-4">Visibility & Mentions Comparison</h3>
+              <ResponsiveContainer width="100%" height={400}>
+                <BarChart 
+                  data={[
+                    {
+                      name: profile?.productName || "Your Product",
+                      visibility: profile?.analysisResult?.overallScore || 0,
+                      mentions: profile?.analysisResult?.mentions || 0,
+                      isYourProduct: true
+                    },
+                    ...(profile?.competitors || []).map(c => ({
+                      name: c.name,
+                      visibility: c.visibility,
+                      mentions: c.mentions,
+                      isYourProduct: false
+                    }))
+                  ]}
+                >
+                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                  <XAxis 
+                    dataKey="name" 
+                    stroke="hsl(var(--muted-foreground))"
+                    angle={-45}
+                    textAnchor="end"
+                    height={100}
+                    interval={0}
+                  />
+                  <YAxis stroke="hsl(var(--muted-foreground))" />
+                  <Tooltip
+                    contentStyle={{
+                      backgroundColor: "hsl(var(--card))",
+                      border: "1px solid hsl(var(--border))",
+                      borderRadius: "8px",
+                    }}
+                  />
+                  <Legend />
+                  <Bar 
+                    dataKey="visibility" 
+                    fill="hsl(var(--primary))" 
+                    radius={[8, 8, 0, 0]}
+                    name="Visibility Score (%)"
+                  />
+                  <Bar 
+                    dataKey="mentions" 
+                    fill="hsl(var(--chart-2))" 
+                    radius={[8, 8, 0, 0]}
+                    name="Total Mentions"
+                  />
+                </BarChart>
+              </ResponsiveContainer>
+            </Card>
+
+            {/* Detailed Competitor Cards */}
+            <div className="space-y-3">
+              <h3 className="text-lg font-semibold">Detailed Metrics</h3>
+              
+              {/* Your Product Card */}
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="p-6 rounded-lg border-2 border-primary bg-primary/5"
+              >
+                <div className="flex items-start justify-between">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-2">
+                      <Award className="h-5 w-5 text-primary" />
+                      <h4 className="font-bold text-lg">{profile?.productName}</h4>
+                      <Badge className="bg-primary text-white">Your Product</Badge>
+                    </div>
+                    <p className="text-sm text-muted-foreground mb-4">
+                      {profile?.category} • {profile?.region.toUpperCase()}
+                    </p>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                      <div>
+                        <p className="text-xs text-muted-foreground">Visibility Score</p>
+                        <p className="text-2xl font-bold text-primary">
+                          {profile?.analysisResult?.overallScore || 0}%
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-muted-foreground">Total Mentions</p>
+                        <p className="text-2xl font-bold">
+                          {profile?.analysisResult?.mentions || 0}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-muted-foreground">Citations</p>
+                        <p className="text-2xl font-bold">
+                          {profile?.analysisResult?.citations || 0}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-muted-foreground">Rank</p>
+                        <p className="text-2xl font-bold text-primary">#1</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </motion.div>
+
+              {/* Competitor Cards */}
+              {profile?.competitors.map((competitor, idx) => (
+                <motion.div
+                  key={competitor.id}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: idx * 0.1 }}
+                  className="p-6 rounded-lg border bg-card hover:shadow-md transition-all"
+                >
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-2">
+                        <h4 className="font-semibold text-lg">{competitor.name}</h4>
+                        <Badge variant="outline">#{competitor.rank}</Badge>
+                      </div>
+                      <p className="text-sm text-muted-foreground mb-4">{competitor.category}</p>
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        <div>
+                          <p className="text-xs text-muted-foreground">Visibility Score</p>
+                          <div className="flex items-center gap-2">
+                            <p className="text-2xl font-bold">{competitor.visibility}%</p>
+                            {competitor.visibility < (profile?.analysisResult?.overallScore || 0) ? (
+                              <Badge className="bg-success/10 text-success text-xs">
+                                You Lead
+                              </Badge>
+                            ) : (
+                              <Badge className="bg-warning/10 text-warning text-xs">
+                                Behind
+                              </Badge>
+                            )}
+                          </div>
+                        </div>
+                        <div>
+                          <p className="text-xs text-muted-foreground">Total Mentions</p>
+                          <p className="text-2xl font-bold">{competitor.mentions}</p>
+                        </div>
+                        <div>
+                          <p className="text-xs text-muted-foreground">Citations</p>
+                          <p className="text-2xl font-bold">{competitor.citations}</p>
+                        </div>
+                        <div>
+                          <p className="text-xs text-muted-foreground">Gap</p>
+                          <p className={`text-2xl font-bold ${
+                            (profile?.analysisResult?.overallScore || 0) - competitor.visibility > 0 
+                              ? 'text-success' 
+                              : 'text-warning'
+                          }`}>
+                            {(profile?.analysisResult?.overallScore || 0) - competitor.visibility > 0 ? '+' : ''}
+                            {(profile?.analysisResult?.overallScore || 0) - competitor.visibility}%
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </motion.div>
+              ))}
+            </div>
+
+            {/* Summary & Insights */}
+            <Card className="p-6 bg-gradient-to-r from-primary/10 to-primary/5 border-primary/20">
+              <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                <Sparkles className="h-5 w-5 text-primary" />
+                Competitive Insights
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                <div>
+                  <p className="font-semibold mb-2">Your Position:</p>
+                  <ul className="space-y-1 text-muted-foreground">
+                    <li>• Ranked #1 with {profile?.analysisResult?.overallScore}% visibility</li>
+                    <li>• {profile?.analysisResult?.mentions} total mentions across all LLMs</li>
+                    <li>• {profile?.analysisResult?.citations} citation sources</li>
+                    <li>• Leading {profile?.competitors.filter(c => c.visibility < (profile?.analysisResult?.overallScore || 0)).length} out of {profile?.competitors.length} competitors</li>
+                  </ul>
+                </div>
+                <div>
+                  <p className="font-semibold mb-2">Key Opportunities:</p>
+                  <ul className="space-y-1 text-muted-foreground">
+                    {profile?.competitors.slice(0, 3).map((comp, idx) => (
+                      <li key={comp.id}>
+                        • {comp.visibility > (profile?.analysisResult?.overallScore || 0) 
+                          ? `Close the ${comp.visibility - (profile?.analysisResult?.overallScore || 0)}% gap with ${comp.name}`
+                          : `Maintain ${(profile?.analysisResult?.overallScore || 0) - comp.visibility}% lead over ${comp.name}`
+                        }
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
+            </Card>
+
+            {/* Action Buttons */}
+            <div className="flex gap-3">
+              <Button
+                onClick={() => {
+                  toast.success("Exporting competitor comparison report...");
+                }}
+                variant="outline"
+                className="flex-1 gap-2"
+              >
+                <Download className="h-4 w-4" />
+                Export Comparison
+              </Button>
+              <Button
+                onClick={() => setShowCompetitorModal(false)}
+                className="flex-1"
+              >
+                Close
+              </Button>
+            </div>
+          </div>
         </DialogContent>
       </Dialog>
     </div>

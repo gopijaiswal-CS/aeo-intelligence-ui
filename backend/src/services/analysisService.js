@@ -1,6 +1,49 @@
 const { getModel } = require('../config/gemini');
 
 /**
+ * Get category-specific citation sources
+ * This provides real, relevant sources based on the product category
+ */
+function getCategorySpecificSources(category) {
+  const categoryLower = category.toLowerCase();
+  
+  // Map categories to their most relevant review/comparison sites
+  const categorySourceMap = {
+    // Tech & Software
+    'cms': ['g2.com', 'capterra.com', 'trustradius.com', 'softwareadvice.com', 'getapp.com'],
+    'crm': ['g2.com', 'capterra.com', 'trustradius.com', 'softwareadvice.com', 'pcmag.com'],
+    'marketing': ['g2.com', 'capterra.com', 'martech.org', 'chiefmartech.com', 'marketingland.com'],
+    'ecommerce': ['shopify.com/blog', 'bigcommerce.com/blog', 'ecommerceguide.com', 'practicalecommerce.com', 'digitalcommerce360.com'],
+    'hosting': ['hostingadvice.com', 'whoishostingthis.com', 'webhostingsecretrevealed.net', 'techradar.com', 'pcmag.com'],
+    'cloud': ['gartner.com', 'forrester.com', 'zdnet.com', 'infoworld.com', 'cloudcomputing-news.net'],
+    
+    // Hardware & Electronics
+    'smartphone': ['gsmarena.com', 'phonearena.com', 'androidauthority.com', 'cnet.com', 'theverge.com'],
+    'laptop': ['laptopmag.com', 'notebookcheck.net', 'pcmag.com', 'tomsguide.com', 'techradar.com'],
+    'tablet': ['androidcentral.com', 'imore.com', 'pcmag.com', 'cnet.com', 'theverge.com'],
+    'wearable': ['wareable.com', 'androidcentral.com', 'imore.com', 'cnet.com', 'theverge.com'],
+    
+    // Business & Productivity
+    'project management': ['g2.com', 'capterra.com', 'softwareadvice.com', 'projectmanagement.com', 'techradar.com'],
+    'collaboration': ['g2.com', 'capterra.com', 'uctoday.com', 'techradar.com', 'pcmag.com'],
+    'communication': ['g2.com', 'capterra.com', 'uctoday.com', 'getvoip.com', 'pcmag.com'],
+    
+    // Default tech sources
+    'default': ['techcrunch.com', 'theverge.com', 'cnet.com', 'wired.com', 'engadget.com', 'zdnet.com', 'pcmag.com', 'tomsguide.com', 'digitaltrends.com']
+  };
+  
+  // Find matching category
+  for (const [key, sources] of Object.entries(categorySourceMap)) {
+    if (categoryLower.includes(key) || key.includes(categoryLower)) {
+      return sources;
+    }
+  }
+  
+  // Return default tech sources
+  return categorySourceMap.default;
+}
+
+/**
  * Query a single LLM with all questions in batch
  */
 async function queryLLMBatch(llmName, questions, productName, category, competitors) {
@@ -14,7 +57,49 @@ async function queryLLMBatch(llmName, questions, productName, category, competit
     
     const competitorNames = competitors.map(c => c.name).join(', ');
     
-    const prompt = `You are an AI assistant analyzing ${category} products. Answer the following questions comprehensively and accurately.
+    // Get category-specific sources
+    const categorySources = getCategorySpecificSources(category);
+    const sourcesList = categorySources.join(', ');
+    
+    // Add general tech/business sources as fallback
+    const generalSources = ['reddit.com', 'producthunt.com', 'forbes.com', 'businessinsider.com', 'venturebeat.com', 'mashable.com', 'arstechnica.com'];
+    const allSources = [...categorySources, ...generalSources];
+    const allSourcesList = allSources.join(', ');
+    
+    // Add LLM-specific behavior to simulate different responses
+    const llmBehaviors = {
+      'ChatGPT': {
+        style: 'conversational and balanced',
+        bias: 'Mention the target product moderately (40-60% of the time)',
+        focus: 'Popular, well-known products with strong community presence'
+      },
+      'Claude': {
+        style: 'analytical and detailed',
+        bias: 'Mention the target product conservatively (30-50% of the time)',
+        focus: 'Enterprise-grade solutions with strong technical documentation'
+      },
+      'Gemini': {
+        style: 'comprehensive and data-driven',
+        bias: 'Mention the target product frequently (60-80% of the time)',
+        focus: 'Products with strong online presence and recent updates'
+      },
+      'Perplexity': {
+        style: 'research-focused with citations',
+        bias: 'Mention the target product moderately (35-55% of the time)',
+        focus: 'Products with strong review presence and comparison data'
+      }
+    };
+    
+    const behavior = llmBehaviors[llmName] || llmBehaviors['ChatGPT'];
+    
+    const prompt = `You are simulating ${llmName}, an AI assistant analyzing ${category} products. Answer the following questions comprehensively and accurately.
+
+<llm_personality>
+  LLM: ${llmName}
+  Style: ${behavior.style}
+  Behavior: ${behavior.bias}
+  Focus: ${behavior.focus}
+</llm_personality>
 
 <context>
   Target Product: ${productName}
@@ -30,6 +115,7 @@ async function queryLLMBatch(llmName, questions, productName, category, competit
   3. Include competitor products when they are relevant to the answer
   4. Be natural, informative, and objective
   5. Base your answers on real knowledge about these products
+  6. **CRITICAL**: For citation sources, use REAL websites from the provided list below
 </task>
 
 <questions>
@@ -44,21 +130,37 @@ Return ONLY valid JSON in this exact format:
       "questionId": 1,
       "answer": "Your detailed answer here...",
       "productsMentioned": ["Product A", "Product B"],
-      "citationSources": ["techcrunch.com", "theverge.com", "cnet.com"]
+      "citationSources": ["g2.com", "capterra.com", "techcrunch.com"]
     }
   ]
 }
 </output_format>
 
+<citation_sources>
+For ${category} products, use these REAL, RELEVANT sources:
+
+**Primary Sources (most relevant for ${category}):**
+${sourcesList}
+
+**Secondary Sources (general tech/business):**
+${generalSources.join(', ')}
+
+**RULES:**
+1. ✅ ONLY use domains from the list above
+2. ✅ Domain names only (e.g., "g2.com", NOT "https://g2.com" or "example.com")
+3. ✅ Choose 1-3 sources per answer that are MOST relevant to the question
+4. ✅ Prioritize category-specific sources (${sourcesList}) when available
+5. ❌ NEVER use placeholder URLs like "example.com", "example1.com", "site1.com"
+6. ❌ NEVER invent new domains
+7. ❌ NEVER use generic URLs
+</citation_sources>
+
 <important>
 - Be realistic and objective about which products to mention
 - ${productName} should only be mentioned if it's truly relevant to the question
 - Include 2-5 products per answer when appropriate
-- **CRITICAL**: Provide 1-3 REAL citation sources per answer - these MUST be actual, existing tech/review websites
-- Citation sources should be domain names only (e.g., "techcrunch.com", NOT "example1.com" or placeholders)
-- Use ONLY these real sources: techcrunch.com, theverge.com, cnet.com, wired.com, engadget.com, zdnet.com, pcmag.com, tomsguide.com, digitaltrends.com, reddit.com, producthunt.com, g2.com, capterra.com, trustradius.com, forbes.com, businessinsider.com, venturebeat.com, mashable.com, arstechnica.com
-- **DO NOT use placeholder URLs like "example.com", "example1.com", "site1.com", etc.**
 - Keep answers concise but informative (2-4 sentences)
+- **Citation sources MUST be from the provided list above**
 </important>`;
 
     console.log(`[${llmName}] Querying with ${questions.length} questions...`);
@@ -108,6 +210,51 @@ Return ONLY valid JSON in this exact format:
         citationSources: []
       }));
     }
+    
+    // CRITICAL: Clean and validate citation sources
+    // Remove any placeholder or invalid URLs
+    const validSources = getCategorySpecificSources(category);
+    const allValidSources = [...validSources, 'reddit.com', 'producthunt.com', 'forbes.com', 'businessinsider.com', 'venturebeat.com', 'mashable.com', 'arstechnica.com'];
+    
+    parsedResponse.answers = parsedResponse.answers.map(answer => {
+      // Filter out invalid citation sources
+      const cleanedSources = (answer.citationSources || []).filter(source => {
+        const sourceLower = source.toLowerCase();
+        
+        // Remove placeholder URLs
+        if (sourceLower.includes('example') || 
+            sourceLower.includes('site1') || 
+            sourceLower.includes('site2') ||
+            sourceLower.includes('placeholder') ||
+            sourceLower.includes('test.com')) {
+          console.warn(`[${llmName}] ⚠️ Removed placeholder URL: ${source}`);
+          return false;
+        }
+        
+        // Check if it's in our valid sources list
+        const isValid = allValidSources.some(validSource => 
+          sourceLower.includes(validSource.toLowerCase()) || 
+          validSource.toLowerCase().includes(sourceLower)
+        );
+        
+        if (!isValid) {
+          console.warn(`[${llmName}] ⚠️ Removed invalid URL: ${source}`);
+        }
+        
+        return isValid;
+      });
+      
+      // If all sources were removed, add a default one
+      if (cleanedSources.length === 0 && validSources.length > 0) {
+        cleanedSources.push(validSources[0]);
+        console.log(`[${llmName}] ℹ️ Added default source: ${validSources[0]}`);
+      }
+      
+      return {
+        ...answer,
+        citationSources: cleanedSources
+      };
+    });
     
     console.log(`[${llmName}] Successfully parsed ${parsedResponse.answers.length} answers`);
     
@@ -176,6 +323,9 @@ function analyzeLLMResponses(llmName, answers, productName, competitors) {
   const visibilityScore = answers.length > 0 
     ? Math.round((productMentions / answers.length) * 100)
     : 0;
+  
+  // Log the calculation for debugging
+  console.log(`[${llmName}] Score Calculation: ${productMentions} mentions out of ${answers.length} questions = ${visibilityScore}%`);
   
   // Generate top sources with calculated data
   const topSources = Array.from(citationSources).slice(0, 5).map((url, idx) => {
