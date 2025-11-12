@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,11 +8,44 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import productsData from "@/data/products.json";
+import * as api from "@/services/api";
+import { Loader2 } from "lucide-react";
 
 export default function Settings() {
+  const [isLoading, setIsLoading] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+
+  // Account Information
+  const [companyName, setCompanyName] = useState("");
+  const [email, setEmail] = useState("");
+  const [website, setWebsite] = useState("");
+
+  // Default Preferences
   const [defaultProduct, setDefaultProduct] = useState("");
   const [defaultRegion, setDefaultRegion] = useState("");
+
+  // LLM Configuration
   const [llmProvider, setLlmProvider] = useState("");
+  const [llmApiKey, setLlmApiKey] = useState("");
+
+  // Contentstack Integration
+  const [contentstackUrl, setContentstackUrl] = useState("");
+  const [contentstackApiKey, setContentstackApiKey] = useState("");
+  const [contentstackToken, setContentstackToken] = useState("");
+
+  // Analysis Settings
+  const [testFrequency, setTestFrequency] = useState(4);
+  const [maxQuestions, setMaxQuestions] = useState(20);
+
+  // Notifications
+  const [weeklyReports, setWeeklyReports] = useState(true);
+  const [brokenLinkAlerts, setBrokenLinkAlerts] = useState(true);
+  const [competitorUpdates, setCompetitorUpdates] = useState(false);
+  const [scoreImprovementAlerts, setScoreImprovementAlerts] = useState(true);
+
+  // Alert Thresholds
+  const [scoreDrop, setScoreDrop] = useState(10);
+  const [mentionDrop, setMentionDrop] = useState(15);
 
   const regions = [
     { value: "us", label: "United States" },
@@ -29,9 +62,120 @@ export default function Settings() {
     { value: "perplexity", label: "Perplexity AI" },
   ];
 
-  const handleSave = () => {
-    toast.success("Settings saved successfully!");
+  // Load settings on mount
+  useEffect(() => {
+    loadSettings();
+  }, []);
+
+  const loadSettings = async () => {
+    setIsLoading(true);
+    try {
+      const response = await api.getSettings();
+      if (response.success && response.data) {
+        const settings = response.data;
+        
+        // Populate form fields
+        setCompanyName(settings.companyName || "");
+        setEmail(settings.email || "");
+        setWebsite(settings.website || "");
+        setDefaultProduct(settings.defaultProduct || "");
+        setDefaultRegion(settings.defaultRegion || "");
+        setLlmProvider(settings.llmProvider || "");
+        setLlmApiKey(settings.llmApiKey || "");
+        setContentstackUrl(settings.contentstackUrl || "");
+        setContentstackApiKey(settings.contentstackApiKey || "");
+        setContentstackToken(settings.contentstackToken || "");
+        setTestFrequency(settings.testFrequency || 4);
+        setMaxQuestions(settings.maxQuestions || 20);
+        setWeeklyReports(settings.notifications?.weeklyReports ?? true);
+        setBrokenLinkAlerts(settings.notifications?.brokenLinkAlerts ?? true);
+        setCompetitorUpdates(settings.notifications?.competitorUpdates ?? false);
+        setScoreImprovementAlerts(settings.notifications?.scoreImprovementAlerts ?? true);
+        setScoreDrop(settings.alertThresholds?.scoreDrop || 10);
+        setMentionDrop(settings.alertThresholds?.mentionDrop || 15);
+      }
+    } catch (error) {
+      console.error("Error loading settings:", error);
+      toast.error("Failed to load settings");
+    } finally {
+      setIsLoading(false);
+    }
   };
+
+  const handleSave = async () => {
+    setIsSaving(true);
+    try {
+      const settings: Partial<api.UserSettings> = {
+        companyName,
+        email,
+        website,
+        defaultProduct,
+        defaultRegion,
+        llmProvider,
+        llmApiKey,
+        contentstackUrl,
+        contentstackApiKey,
+        contentstackToken,
+        testFrequency,
+        maxQuestions,
+        notifications: {
+          weeklyReports,
+          brokenLinkAlerts,
+          competitorUpdates,
+          scoreImprovementAlerts,
+        },
+        alertThresholds: {
+          scoreDrop,
+          mentionDrop,
+        },
+      };
+
+      const response = await api.updateSettings(settings);
+      if (response.success) {
+        toast.success("Settings saved successfully!");
+      } else {
+        toast.error(response.error?.message || "Failed to save settings");
+      }
+    } catch (error) {
+      console.error("Error saving settings:", error);
+      toast.error("Failed to save settings");
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleReset = async () => {
+    if (!confirm("Are you sure you want to reset all settings to default?")) {
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      const response = await api.resetSettings();
+      if (response.success) {
+        toast.success("Settings reset to default");
+        await loadSettings(); // Reload settings
+      } else {
+        toast.error(response.error?.message || "Failed to reset settings");
+      }
+    } catch (error) {
+      console.error("Error resetting settings:", error);
+      toast.error("Failed to reset settings");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  if (isLoading && !companyName && !email) {
+    return (
+      <div className="min-h-screen p-6 flex items-center justify-center">
+        <div className="text-center">
+          <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4" />
+          <p className="text-muted-foreground">Loading settings...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen p-6">
@@ -55,15 +199,34 @@ export default function Settings() {
               <div className="space-y-4">
                 <div>
                   <Label htmlFor="company">Company Name</Label>
-                  <Input id="company" placeholder="Your Company" className="mt-1" />
+                  <Input 
+                    id="company" 
+                    value={companyName}
+                    onChange={(e) => setCompanyName(e.target.value)}
+                    placeholder="Your Company" 
+                    className="mt-1" 
+                  />
                 </div>
                 <div>
                   <Label htmlFor="email">Email</Label>
-                  <Input id="email" type="email" placeholder="email@example.com" className="mt-1" />
+                  <Input 
+                    id="email" 
+                    type="email" 
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="email@example.com" 
+                    className="mt-1" 
+                  />
                 </div>
                 <div>
                   <Label htmlFor="website">Website</Label>
-                  <Input id="website" placeholder="https://yourwebsite.com" className="mt-1" />
+                  <Input 
+                    id="website" 
+                    value={website}
+                    onChange={(e) => setWebsite(e.target.value)}
+                    placeholder="https://yourwebsite.com" 
+                    className="mt-1" 
+                  />
                 </div>
               </div>
             </Card>
@@ -130,6 +293,8 @@ export default function Settings() {
                   <Input
                     id="llm-api-key"
                     type="password"
+                    value={llmApiKey}
+                    onChange={(e) => setLlmApiKey(e.target.value)}
                     placeholder="sk-••••••••••••••••"
                     className="mt-1"
                   />
@@ -147,6 +312,8 @@ export default function Settings() {
                   <Label htmlFor="contentstack-url">Contentstack API URL</Label>
                   <Input
                     id="contentstack-url"
+                    value={contentstackUrl}
+                    onChange={(e) => setContentstackUrl(e.target.value)}
                     placeholder="https://api.contentstack.io/v3"
                     className="mt-1"
                   />
@@ -156,6 +323,8 @@ export default function Settings() {
                   <Input
                     id="contentstack-key"
                     type="password"
+                    value={contentstackApiKey}
+                    onChange={(e) => setContentstackApiKey(e.target.value)}
                     placeholder="••••••••••••••••"
                     className="mt-1"
                   />
@@ -165,6 +334,8 @@ export default function Settings() {
                   <Input
                     id="contentstack-token"
                     type="password"
+                    value={contentstackToken}
+                    onChange={(e) => setContentstackToken(e.target.value)}
                     placeholder="••••••••••••••••"
                     className="mt-1"
                   />
@@ -183,7 +354,8 @@ export default function Settings() {
                   <Input
                     id="test-frequency"
                     type="number"
-                    defaultValue="4"
+                    value={testFrequency}
+                    onChange={(e) => setTestFrequency(Number(e.target.value))}
                     min="1"
                     max="24"
                     className="mt-1"
@@ -194,7 +366,8 @@ export default function Settings() {
                   <Input
                     id="max-questions"
                     type="number"
-                    defaultValue="20"
+                    value={maxQuestions}
+                    onChange={(e) => setMaxQuestions(Number(e.target.value))}
                     min="5"
                     max="100"
                     className="mt-1"
@@ -216,7 +389,10 @@ export default function Settings() {
                       Receive comprehensive weekly reports
                     </p>
                   </div>
-                  <Switch defaultChecked />
+                  <Switch 
+                    checked={weeklyReports}
+                    onCheckedChange={setWeeklyReports}
+                  />
                 </div>
                 <div className="flex items-center justify-between">
                   <div>
@@ -225,7 +401,10 @@ export default function Settings() {
                       Get notified immediately when broken links are detected
                     </p>
                   </div>
-                  <Switch defaultChecked />
+                  <Switch 
+                    checked={brokenLinkAlerts}
+                    onCheckedChange={setBrokenLinkAlerts}
+                  />
                 </div>
                 <div className="flex items-center justify-between">
                   <div>
@@ -234,7 +413,10 @@ export default function Settings() {
                       Track competitor visibility changes
                     </p>
                   </div>
-                  <Switch />
+                  <Switch 
+                    checked={competitorUpdates}
+                    onCheckedChange={setCompetitorUpdates}
+                  />
                 </div>
                 <div className="flex items-center justify-between">
                   <div>
@@ -243,7 +425,10 @@ export default function Settings() {
                       Get notified when your visibility score increases
                     </p>
                   </div>
-                  <Switch defaultChecked />
+                  <Switch 
+                    checked={scoreImprovementAlerts}
+                    onCheckedChange={setScoreImprovementAlerts}
+                  />
                 </div>
               </div>
             </Card>
@@ -256,7 +441,8 @@ export default function Settings() {
                   <Input
                     id="score-drop"
                     type="number"
-                    defaultValue="10"
+                    value={scoreDrop}
+                    onChange={(e) => setScoreDrop(Number(e.target.value))}
                     min="1"
                     max="50"
                     className="mt-1"
@@ -267,7 +453,8 @@ export default function Settings() {
                   <Input
                     id="mention-drop"
                     type="number"
-                    defaultValue="15"
+                    value={mentionDrop}
+                    onChange={(e) => setMentionDrop(Number(e.target.value))}
                     min="1"
                     max="50"
                     className="mt-1"
@@ -279,8 +466,26 @@ export default function Settings() {
         </Tabs>
 
         <div className="flex justify-end gap-3">
-          <Button variant="outline">Cancel</Button>
-          <Button onClick={handleSave}>Save Changes</Button>
+          <Button 
+            variant="outline"
+            onClick={handleReset}
+            disabled={isLoading || isSaving}
+          >
+            Reset to Default
+          </Button>
+          <Button 
+            onClick={handleSave}
+            disabled={isLoading || isSaving}
+          >
+            {isSaving ? (
+              <>
+                <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                Saving...
+              </>
+            ) : (
+              "Save Changes"
+            )}
+          </Button>
         </div>
       </div>
     </div>

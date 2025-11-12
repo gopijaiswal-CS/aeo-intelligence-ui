@@ -358,6 +358,66 @@ export async function generateReport(
   };
 }
 
+// ============================================
+// 8. SETTINGS MANAGEMENT
+// ============================================
+
+export interface UserSettings {
+  _id?: string;
+  companyName: string;
+  email: string;
+  website: string;
+  defaultProduct: string;
+  defaultRegion: string;
+  llmProvider: string;
+  llmApiKey: string;
+  contentstackUrl: string;
+  contentstackApiKey: string;
+  contentstackToken: string;
+  testFrequency: number;
+  maxQuestions: number;
+  notifications: {
+    weeklyReports: boolean;
+    brokenLinkAlerts: boolean;
+    competitorUpdates: boolean;
+    scoreImprovementAlerts: boolean;
+  };
+  alertThresholds: {
+    scoreDrop: number;
+    mentionDrop: number;
+  };
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+/**
+ * Get user settings
+ */
+export async function getSettings(): Promise<ApiResponse<UserSettings>> {
+  return apiRequest<UserSettings>('/settings');
+}
+
+/**
+ * Update user settings
+ */
+export async function updateSettings(
+  settings: Partial<UserSettings>
+): Promise<ApiResponse<UserSettings>> {
+  return apiRequest<UserSettings>('/settings', {
+    method: 'PUT',
+    body: JSON.stringify(settings),
+  });
+}
+
+/**
+ * Reset settings to default
+ */
+export async function resetSettings(): Promise<ApiResponse<UserSettings>> {
+  return apiRequest<UserSettings>('/settings/reset', {
+    method: 'POST',
+  });
+}
+
 // Export all functions
 export default {
   createProfile,
@@ -370,5 +430,8 @@ export default {
   getOptimizationRecommendations,
   runSEOHealthCheck,
   generateReport,
+  getSettings,
+  updateSettings,
+  resetSettings,
 };
 
