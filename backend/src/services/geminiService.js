@@ -2,6 +2,7 @@ const { getModel } = require("../config/gemini");
 const axios = require("axios");
 const cheerio = require("cheerio");
 const { generateProductsList } = require("../prompts/generateProductsList");
+const { generateQuestionsAndCompetitors: generateQCPrompt } = require("../prompts/generateQuestionsAndCompetitors");
 
 /**
  * Generate products from a website URL using Gemini AI
@@ -30,14 +31,18 @@ async function generateProducts(websiteUrl) {
     // Extract JSON from response
     let products = [];
     try {
-      // Try to find JSON in the response (look for json block or array)
+      // Try to find JSON in the response (handle markdown code blocks, XML tags, or raw JSON)
       const jsonMatch =
-        text.match(/<json>\s*(\{[\s\S]*?\})\s*<\/json>/) ||
-        text.match(/\{[\s\S]*?"products"[\s\S]*?\}/) ||
-        text.match(/\[[\s\S]*?\]/);
+        text.match(/```json\s*(\{[\s\S]*?\})\s*```/) ||           // Markdown: ```json {...} ```
+        text.match(/```\s*(\{[\s\S]*?\})\s*```/) ||               // Markdown: ``` {...} ```
+        text.match(/<json>\s*(\{[\s\S]*?\})\s*<\/json>/) ||       // XML: <json>{...}</json>
+        text.match(/\{[\s\S]*?"products"[\s\S]*?\}/) ||           // Raw JSON with "products"
+        text.match(/\[[\s\S]*?\]/);                                // Raw array
 
       if (jsonMatch) {
         let jsonText = jsonMatch[1] || jsonMatch[0];
+        // Clean up any remaining markdown or whitespace
+        jsonText = jsonText.replace(/```json|```/g, '').trim();
         const parsedData = JSON.parse(jsonText);
 
         // Handle both formats: {"products": [...]} and [...]
@@ -102,92 +107,129 @@ async function generateProducts(websiteUrl) {
 /**
  * Generate questions and competitors using Gemini AI
  */
-async function generateQuestionsAndCompetitors(productName, category, region) {
+async function generateQuestionsAndCompetitors(productName, category, region, websiteUrl = '') {
   try {
-    const model = getModel();
+    const model = getModel("gemini-2.5-flash");
 
-    // Generate Questions
-    const questionsPrompt = `Generate 20 diverse test questions that users might ask AI assistants (ChatGPT, Claude, Gemini, Perplexity) about "${productName}" in the "${category}" category for the ${region} region.
+    // Use the comprehensive prompt template
+    const prompt = generateQCPrompt(productName, category, region, websiteUrl);
 
-Questions should cover these categories (distribute evenly):
-- Product Recommendation
-- Feature Comparison
-- How-To
-- Technical
-- Price Comparison
-- Security
-- Use Case
-- Compatibility
+    console.log("Generating questions and competitors for:", productName, category, region);
+    const result = await model.generateContent(prompt);
+    const response = result.response;
+    const text = response.text();
 
-Return ONLY a valid JSON array in this format:
-[
-  {
-    "id": 1,
-    "question": "What are the best...",
-    "category": "Product Recommendation"
-  }
-]
-
-Make questions natural and varied.`;
-
-    const questionsResult = await model.generateContent(questionsPrompt);
-    const questionsText = questionsResult.response.text();
+    console.log("Gemini AI Response:", text);
 
     let questions = [];
+    let competitors = [];
+
     try {
-      const jsonMatch = questionsText.match(/\[[\s\S]*\]/);
+      // Try to find JSON in the response (handle markdown code blocks first)
+      const jsonMatch = 
+        text.match(/```json\s*(\{[\s\S]*?\})\s*```/) ||                      // Markdown: ```json {...} ```
+        text.match(/```\s*(\{[\s\S]*?\})\s*```/) ||                          // Markdown: ``` {...} ```
+        text.match(/\{[\s\S]*?"questions"[\s\S]*?"competitors"[\s\S]*?\}/) || // Raw JSON with both keys
+        text.match(/\{[\s\S]*?\}/);                                           // Any JSON object
+
       if (jsonMatch) {
-        questions = JSON.parse(jsonMatch[0]);
-        // Add region and default values
-        questions = questions.map((q, index) => ({
-          id: index + 1,
-          question: q.question,
-          category: q.category,
+        let jsonText = jsonMatch[1] || jsonMatch[0];
+        // Clean up the JSON text (remove markdown and whitespace)
+        jsonText = jsonText.replace(/```json|```/g, '').trim();
+        
+        const parsedData = JSON.parse(jsonText);
+
+        console.log("Successfully parsed JSON:", JSON.stringify(parsedData, null, 2));
+
+        // Extract questions
+        if (parsedData.questions && Array.isArray(parsedData.questions)) {
+          questions = parsedData.questions.map((q, index) => ({
+            id: index + 1,
+            question: q.question,
+            category: q.category || "General",
+            region: q.region || region,
+            aiMentions: 0,
+            visibility: 0,
+            addedBy: "auto",
+          }));
+          console.log(`✅ Extracted ${questions.length} questions from AI response`);
+        } else {
+          console.warn("⚠️ No questions array found in parsed data");
+        }
+
+        // Extract competitors
+        if (parsedData.competitors && Array.isArray(parsedData.competitors)) {
+          competitors = parsedData.competitors.map((c, index) => ({
+            id: index + 1,
+            name: c.name,
+            category: c.category || category,
+            description: c.description || `Competitor in ${category} category`,
+            visibility: 0,
+            mentions: 0,
+            citations: 0,
+            rank: index + 1,
+          }));
+          console.log(`✅ Extracted ${competitors.length} competitors from AI response`);
+        } else {
+          console.warn("⚠️ No competitors array found in parsed data");
+        }
+      } else {
+        console.warn("⚠️ Could not find JSON in response, using fallback");
+      }
+    } catch (parseError) {
+      console.error("JSON parsing error:", parseError);
+      console.error("Response text:", text);
+    }
+
+    // Fallback if no questions generated
+    if (questions.length === 0) {
+      console.warn("⚠️ Using fallback questions (AI generation failed or returned no questions)");
+      questions = [
+        {
+          id: 1,
+          question: `What is ${productName}?`,
+          category: "Product Recommendation",
           region: region,
           aiMentions: 0,
           visibility: 0,
           addedBy: "auto",
-        }));
-      }
-    } catch (parseError) {
-      console.error("Questions JSON parsing error:", parseError);
+        },
+        {
+          id: 2,
+          question: `How does ${productName} compare to alternatives?`,
+          category: "Feature Comparison",
+          region: region,
+          aiMentions: 0,
+          visibility: 0,
+          addedBy: "auto",
+        },
+        {
+          id: 3,
+          question: `What are the main features of ${productName}?`,
+          category: "Technical",
+          region: region,
+          aiMentions: 0,
+          visibility: 0,
+          addedBy: "auto",
+        },
+      ];
     }
 
-    // Generate Competitors
-    const competitorsPrompt = `Identify 5-7 main competitors for "${productName}" in the "${category}" category.
-
-Return ONLY a valid JSON array in this format:
-[
-  {
-    "id": 1,
-    "name": "Competitor Name",
-    "category": "${category}"
-  }
-]
-
-List real competitors or similar products/services.`;
-
-    const competitorsResult = await model.generateContent(competitorsPrompt);
-    const competitorsText = competitorsResult.response.text();
-
-    let competitors = [];
-    try {
-      const jsonMatch = competitorsText.match(/\[[\s\S]*\]/);
-      if (jsonMatch) {
-        competitors = JSON.parse(jsonMatch[0]);
-        // Add default values
-        competitors = competitors.map((c, index) => ({
-          id: index + 1,
-          name: c.name,
-          category: c.category || category,
+    // Fallback if no competitors generated
+    if (competitors.length === 0) {
+      console.warn("⚠️ Using fallback competitors (AI generation failed or returned no competitors)");
+      competitors = [
+        {
+          id: 1,
+          name: "Competitor A",
+          category: category,
+          description: `Alternative to ${productName}`,
           visibility: 0,
           mentions: 0,
           citations: 0,
-          rank: index + 1,
-        }));
-      }
-    } catch (parseError) {
-      console.error("Competitors JSON parsing error:", parseError);
+          rank: 1,
+        },
+      ];
     }
 
     return {

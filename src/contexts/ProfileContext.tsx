@@ -175,41 +175,38 @@ export const ProfileProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const generateQuestionsAndCompetitors = async (profileId: string): Promise<void> => {
-    updateProfile(profileId, { status: "generating" });
+    try {
+      // Update status to generating
+      await updateProfile(profileId, { status: "generating" });
 
-    // Simulate generation
-    await new Promise((resolve) => setTimeout(resolve, 2000));
+      // Call the real API
+      const response = await api.generateQuestionsAndCompetitors(profileId);
 
-    const profile = profiles.find((p) => p.id === profileId);
-    if (!profile) return;
+      if (response.success && response.data) {
+        const { questions, competitors } = response.data;
+        
+        // Update profile with generated data
+        await updateProfile(profileId, {
+          questions,
+          competitors,
+          status: "ready",
+        });
 
-    // Generate mock questions based on product and region
-    const mockQuestions: Question[] = Array.from({ length: 20 }, (_, i) => ({
-      id: i + 1,
-      question: `What are the best ${profile.category.toLowerCase()} products for ${profile.productName}?`,
-      category: ["Product Recommendation", "Feature Comparison", "How-To", "Technical"][i % 4],
-      region: profile.region,
-      aiMentions: Math.floor(Math.random() * 20) + 5,
-      visibility: Math.floor(Math.random() * 30) + 50,
-      addedBy: "auto",
-    }));
-
-    // Generate mock competitors
-    const mockCompetitors: Competitor[] = Array.from({ length: 5 }, (_, i) => ({
-      id: i + 1,
-      name: `Competitor ${String.fromCharCode(65 + i)}`,
-      visibility: Math.floor(Math.random() * 30) + 50,
-      mentions: Math.floor(Math.random() * 30) + 10,
-      citations: Math.floor(Math.random() * 15) + 5,
-      rank: i + 1,
-      category: profile.category,
-    }));
-
-    updateProfile(profileId, {
-      questions: mockQuestions,
-      competitors: mockCompetitors,
-      status: "ready",
-    });
+        // Reload profiles to get updated data from server
+        await loadProfiles();
+        
+        toast.success(`Generated ${questions.length} questions and ${competitors.length} competitors!`);
+      } else {
+        throw new Error(response.error?.message || "Failed to generate questions and competitors");
+      }
+    } catch (error: any) {
+      console.error("Error generating questions and competitors:", error);
+      
+      // Reset status on error
+      await updateProfile(profileId, { status: "draft" });
+      
+      toast.error(error.message || "Failed to generate questions and competitors");
+    }
   };
 
   const runAnalysis = async (profileId: string): Promise<void> => {

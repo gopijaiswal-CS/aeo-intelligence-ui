@@ -206,7 +206,8 @@ exports.generateQuestionsAndCompetitors = async (req, res) => {
     const { questions, competitors } = await generateQuestionsAndCompetitors(
       profile.productName,
       profile.category,
-      profile.region
+      profile.region,
+      profile.websiteUrl
     );
 
     // Update profile with generated data
