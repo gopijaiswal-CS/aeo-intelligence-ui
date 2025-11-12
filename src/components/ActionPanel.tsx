@@ -23,7 +23,13 @@ export const ActionPanel = ({ onSimulate, onOptimize, profileId }: ActionPanelPr
   const [showLLMTextModal, setShowLLMTextModal] = useState(false);
   const [showHealthModal, setShowHealthModal] = useState(false);
   const [showOptimizeModal, setShowOptimizeModal] = useState(false);
-  const [isGenerating, setIsGenerating] = useState(false);
+  
+  // Separate loading states for each action
+  const [isGeneratingLLMText, setIsGeneratingLLMText] = useState(false);
+  const [isGeneratingHealth, setIsGeneratingHealth] = useState(false);
+  const [isGeneratingOptimize, setIsGeneratingOptimize] = useState(false);
+  const [isGeneratingReport, setIsGeneratingReport] = useState(false);
+  
   const [llmTextContent, setLLMTextContent] = useState("");
 
   // Get current profile data
@@ -35,7 +41,7 @@ export const ActionPanel = ({ onSimulate, onOptimize, profileId }: ActionPanelPr
       return;
     }
 
-    setIsGenerating(true);
+    setIsGeneratingLLMText(true);
     toast.loading("Generating llm.txt file...");
 
     try {
@@ -129,7 +135,7 @@ website: ${profile.websiteUrl}
       toast.dismiss();
       toast.error("Failed to generate llm.txt");
     } finally {
-      setIsGenerating(false);
+      setIsGeneratingLLMText(false);
     }
   };
 
@@ -152,13 +158,13 @@ website: ${profile.websiteUrl}
   };
 
   const handleHealthCheck = async () => {
-    setIsGenerating(true);
+    setIsGeneratingHealth(true);
     toast.loading("Running SEO health check...");
     
     await new Promise((resolve) => setTimeout(resolve, 1500));
     
     toast.dismiss();
-    setIsGenerating(false);
+    setIsGeneratingHealth(false);
     setShowHealthModal(true);
     toast.success("Health check complete!");
   };
@@ -169,7 +175,7 @@ website: ${profile.websiteUrl}
       return;
     }
 
-    setIsGenerating(true);
+    setIsGeneratingReport(true);
     
     try {
       toast.loading("Generating PDF report with charts...");
@@ -191,7 +197,7 @@ website: ${profile.websiteUrl}
       toast.dismiss();
       toast.error("Failed to generate report. Please try again.");
     } finally {
-      setIsGenerating(false);
+      setIsGeneratingReport(false);
     }
   };
 
@@ -199,13 +205,13 @@ website: ${profile.websiteUrl}
     if (onOptimize) {
       onOptimize();
     } else {
-      setIsGenerating(true);
+      setIsGeneratingOptimize(true);
       toast.loading("Analyzing content optimization opportunities...");
       
       await new Promise((resolve) => setTimeout(resolve, 2000));
       
       toast.dismiss();
-      setIsGenerating(false);
+      setIsGeneratingOptimize(false);
       setShowOptimizeModal(true);
       toast.success("Optimization suggestions ready!");
     }
@@ -222,6 +228,7 @@ website: ${profile.websiteUrl}
       iconBg: "bg-purple-100 dark:bg-purple-900/30",
       iconColor: "text-purple-600 dark:text-purple-400",
       action: handleGenerateLLMText,
+      isLoading: isGeneratingLLMText,
       variant: "outline" as const,
     },
     {
@@ -234,6 +241,7 @@ website: ${profile.websiteUrl}
       iconBg: "bg-green-100 dark:bg-green-900/30",
       iconColor: "text-green-600 dark:text-green-400",
       action: handleHealthCheck,
+      isLoading: isGeneratingHealth,
       variant: "outline" as const,
     },
     {
@@ -246,6 +254,7 @@ website: ${profile.websiteUrl}
       iconBg: "bg-orange-100 dark:bg-orange-900/30",
       iconColor: "text-orange-600 dark:text-orange-400",
       action: handleOptimize,
+      isLoading: isGeneratingOptimize,
       variant: "outline" as const,
     },
     {
@@ -258,6 +267,7 @@ website: ${profile.websiteUrl}
       iconBg: "bg-blue-100 dark:bg-blue-900/30",
       iconColor: "text-blue-600 dark:text-blue-400",
       action: handleGenerateReport,
+      isLoading: isGeneratingReport,
       variant: "outline" as const,
     },
   ];
@@ -324,12 +334,12 @@ website: ${profile.websiteUrl}
                     {/* Action Button */}
                     <Button
                       onClick={action.action}
-                      disabled={isGenerating}
+                      disabled={action.isLoading}
                       className="w-full gap-2 group-hover:scale-105 transition-transform"
                       variant={action.variant}
                     >
                       <Icon className="h-4 w-4" />
-                      {isGenerating ? "Processing..." : "Run Now"}
+                      {action.isLoading ? "Processing..." : "Run Now"}
                     </Button>
                   </div>
                 </Card>
