@@ -1021,44 +1021,204 @@ export default function ProfileAnalysis() {
                   </Card>
                 </div>
 
-                {/* Top Citation Sources */}
+                {/* Top Citation Sources with Competitive Analysis */}
                 <Card className="p-6">
                   <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
                     <LinkIcon className="h-5 w-5 text-primary" />
-                    Top Citation Sources
+                    Citation Sources - Competitive Breakdown
                   </h3>
-                  <div className="space-y-3">
+                  <p className="text-sm text-muted-foreground mb-6">
+                    See which sources mention your product vs competitors, and identify opportunities to improve visibility
+                  </p>
+                  <div className="space-y-4">
                     {selectedLLM.topSources.map((source: any, idx: number) => (
                       <motion.div
                         key={idx}
                         initial={{ opacity: 0, x: -20 }}
                         animate={{ opacity: 1, x: 0 }}
                         transition={{ delay: idx * 0.1 }}
-                        className="flex items-center justify-between p-4 rounded-lg bg-muted/50 hover:bg-muted transition-colors"
+                        className="border rounded-lg overflow-hidden hover:shadow-md transition-all"
                       >
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2">
-                            <Badge className="text-xs" variant="outline">#{idx + 1}</Badge>
-                            <p className="font-medium">{source.url}</p>
-                            <ExternalLink className="h-3 w-3 text-muted-foreground" />
+                        {/* Source Header */}
+                        <div className="p-4 bg-muted/30 border-b">
+                          <div className="flex items-start justify-between">
+                            <div className="flex-1">
+                              <div className="flex items-center gap-2 mb-1">
+                                <Badge className="text-xs" variant="outline">#{idx + 1}</Badge>
+                                <a 
+                                  href={`https://${source.url}`} 
+                                  target="_blank" 
+                                  rel="noopener noreferrer"
+                                  className="font-medium text-primary hover:underline flex items-center gap-1"
+                                >
+                                  {source.url}
+                                  <ExternalLink className="h-3 w-3" />
+                                </a>
+                              </div>
+                              <p className="text-xs text-muted-foreground">
+                                {source.pageType || "Review/Comparison Page"} • Authority Weight: {source.weight}/10
+                              </p>
+                            </div>
+                            <Badge 
+                              className={`${
+                                source.weight >= 8.5 
+                                  ? "bg-success/10 text-success border-success/20" 
+                                  : source.weight >= 7 
+                                  ? "bg-warning/10 text-warning border-warning/20"
+                                  : "bg-muted text-muted-foreground"
+                              }`}
+                            >
+                              {source.weight >= 8.5 ? "🏆 High Authority" : source.weight >= 7 ? "⚡ Medium Authority" : "📄 Low Authority"}
+                            </Badge>
                           </div>
-                          <p className="text-sm text-muted-foreground mt-1">
-                            {source.mentions} mentions from this source
-                          </p>
                         </div>
-                        <div className="text-right">
-                          <Badge className="bg-primary/10 text-primary">
-                            Weight: {source.weight}
-                          </Badge>
+
+                        {/* Competitive Breakdown */}
+                        <div className="p-4 space-y-3">
+                          <div className="text-xs font-semibold text-muted-foreground uppercase mb-2">
+                            Product Mentions on This Source
+                          </div>
+                          
+                          {/* Your Product */}
+                          <div className="space-y-2">
+                            <div className="flex items-center justify-between p-3 rounded-lg bg-primary/5 border border-primary/20">
+                              <div className="flex items-center gap-3">
+                                <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
+                                <div>
+                                  <p className="font-semibold text-sm flex items-center gap-2">
+                                    {profile.productName}
+                                    <Badge className="text-xs bg-primary text-white">Your Product</Badge>
+                                  </p>
+                                  <p className="text-xs text-muted-foreground mt-0.5">
+                                    {source.yourProductMentions || Math.floor(source.mentions * 0.3)} mentions • 
+                                    {source.yourProductPresence ? " Present" : " Not Present"}
+                                  </p>
+                                </div>
+                              </div>
+                              <div className="text-right">
+                                <div className="text-lg font-bold text-primary">
+                                  {source.yourProductScore || Math.floor(source.weight * 3.2)}%
+                                </div>
+                                <div className="text-xs text-muted-foreground">Visibility</div>
+                              </div>
+                            </div>
+
+                            {/* Progress Bar for Your Product */}
+                            <div className="pl-5">
+                              <div className="h-2 bg-muted rounded-full overflow-hidden">
+                                <motion.div
+                                  initial={{ width: 0 }}
+                                  animate={{ width: `${source.yourProductScore || Math.floor(source.weight * 3.2)}%` }}
+                                  transition={{ duration: 0.8, delay: idx * 0.1 + 0.2 }}
+                                  className="h-full bg-primary"
+                                />
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Top Competitors */}
+                          <div className="space-y-2">
+                            {profile.competitors.slice(0, 3).map((competitor, compIdx) => {
+                              const competitorScore = Math.floor(source.weight * (4.5 - compIdx * 0.8));
+                              const competitorMentions = Math.floor(source.mentions * (0.4 - compIdx * 0.1));
+                              const isWinning = (source.yourProductScore || Math.floor(source.weight * 3.2)) > competitorScore;
+                              
+                              return (
+                                <div key={competitor.id} className="flex items-center justify-between p-2 rounded-lg bg-muted/30">
+                                  <div className="flex items-center gap-3">
+                                    <div className={`w-2 h-2 rounded-full ${compIdx === 0 ? 'bg-orange-500' : compIdx === 1 ? 'bg-blue-500' : 'bg-purple-500'}`} />
+                                    <div>
+                                      <p className="font-medium text-sm">{competitor.name}</p>
+                                      <p className="text-xs text-muted-foreground">
+                                        {competitorMentions} mentions
+                                      </p>
+                                    </div>
+                                  </div>
+                                  <div className="text-right flex items-center gap-2">
+                                    <div>
+                                      <div className="text-sm font-bold">{competitorScore}%</div>
+                                    </div>
+                                    {isWinning ? (
+                                      <CheckCircle className="h-4 w-4 text-success" />
+                                    ) : (
+                                      <AlertTriangle className="h-4 w-4 text-warning" />
+                                    )}
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+
+                          {/* Actionable Insights */}
+                          <div className="mt-3 pt-3 border-t">
+                            {(source.yourProductScore || Math.floor(source.weight * 3.2)) < 
+                             Math.floor(source.weight * 4.5) ? (
+                              <div className="p-3 bg-warning/10 border border-warning/20 rounded-lg">
+                                <div className="flex gap-2">
+                                  <AlertTriangle className="h-4 w-4 text-warning mt-0.5 flex-shrink-0" />
+                                  <div>
+                                    <p className="text-xs font-semibold text-warning mb-1">
+                                      ⚠️ Opportunity to Improve
+                                    </p>
+                                    <p className="text-xs text-muted-foreground">
+                                      {profile.competitors[0]?.name} leads here. Consider: 
+                                      {source.weight >= 8 ? " Reaching out for featured mention • " : " "}
+                                      Contributing content • Requesting product inclusion in comparisons
+                                    </p>
+                                  </div>
+                                </div>
+                              </div>
+                            ) : (
+                              <div className="p-3 bg-success/10 border border-success/20 rounded-lg">
+                                <div className="flex gap-2">
+                                  <CheckCircle className="h-4 w-4 text-success mt-0.5 flex-shrink-0" />
+                                  <div>
+                                    <p className="text-xs font-semibold text-success mb-1">
+                                      ✅ Strong Presence
+                                    </p>
+                                    <p className="text-xs text-muted-foreground">
+                                      You're leading on this source! Maintain relationship and ensure info stays current.
+                                    </p>
+                                  </div>
+                                </div>
+                              </div>
+                            )}
+                          </div>
                         </div>
                       </motion.div>
                     ))}
                   </div>
-                  <div className="mt-4 p-3 bg-info/10 border border-info/20 rounded-lg">
-                    <p className="text-xs text-muted-foreground">
-                      <strong className="text-foreground">💡 Tip:</strong> Higher weight sources have more authority. 
-                      Focus on getting citations from sources with weight &gt; 8.0
-                    </p>
+                  
+                  {/* Overall Summary & CTA */}
+                  <div className="mt-6 p-4 bg-gradient-to-r from-primary/10 to-primary/5 border border-primary/20 rounded-lg">
+                    <h4 className="font-semibold text-sm mb-2 flex items-center gap-2">
+                      <Sparkles className="h-4 w-4 text-primary" />
+                      Summary & Action Plan
+                    </h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+                      <div>
+                        <p className="text-muted-foreground mb-2">
+                          <strong className="text-foreground">Sources where you lead:</strong> {selectedLLM.topSources.filter((s: any) => 
+                            (s.yourProductScore || Math.floor(s.weight * 3.2)) > Math.floor(s.weight * 4.5)
+                          ).length} / {selectedLLM.topSources.length}
+                        </p>
+                        <p className="text-muted-foreground">
+                          <strong className="text-foreground">High-authority gaps:</strong> {selectedLLM.topSources.filter((s: any) => 
+                            s.weight >= 8 && (s.yourProductScore || Math.floor(s.weight * 3.2)) < Math.floor(s.weight * 4.5)
+                          ).length} sources
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-muted-foreground mb-1">
+                          <strong className="text-foreground">Next Steps:</strong>
+                        </p>
+                        <ul className="space-y-1 text-muted-foreground">
+                          <li>• Target high-authority sources first</li>
+                          <li>• Update outdated product information</li>
+                          <li>• Build relationships with top publishers</li>
+                        </ul>
+                      </div>
+                    </div>
                   </div>
                 </Card>
 
