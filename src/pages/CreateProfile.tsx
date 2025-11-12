@@ -268,12 +268,11 @@ export default function CreateProfile() {
     return true;
   };
 
-  // Handle URL change with validation
+  // Handle URL change with real-time validation
   const handleUrlChange = (value: string) => {
     setWebsiteUrl(value);
-    if (urlTouched) {
-      validateUrl(value);
-    }
+    setUrlTouched(true); // Mark as touched immediately for real-time feedback
+    validateUrl(value);
   };
 
   // Handle URL blur (when user leaves the field)
