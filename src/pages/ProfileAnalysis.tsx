@@ -555,10 +555,15 @@ export default function ProfileAnalysis() {
                       className="flex items-start justify-between p-3 rounded-lg bg-muted/50 hover:bg-muted transition-colors"
                     >
                       <div className="flex-1">
-                        <p className="font-medium text-sm flex items-center gap-2">
+                        <a
+                          href={source.url.startsWith('http') ? source.url : `https://${source.url}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="font-medium text-sm flex items-center gap-2 text-primary hover:underline"
+                        >
                           {source.url}
                           <ExternalLink className="h-3 w-3" />
-                        </p>
+                        </a>
                         <p className="text-xs text-muted-foreground mt-1">
                           {source.llm} • {source.mentions} mentions
                         </p>
@@ -1046,7 +1051,7 @@ export default function ProfileAnalysis() {
                               <div className="flex items-center gap-2 mb-1">
                                 <Badge className="text-xs" variant="outline">#{idx + 1}</Badge>
                                 <a 
-                                  href={`https://${source.url}`} 
+                                  href={source.url.startsWith('http') ? source.url : `https://${source.url}`}
                                   target="_blank" 
                                   rel="noopener noreferrer"
                                   className="font-medium text-primary hover:underline flex items-center gap-1"

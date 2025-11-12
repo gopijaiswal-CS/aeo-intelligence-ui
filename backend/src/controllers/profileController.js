@@ -291,8 +291,25 @@ exports.runAnalysis = async (req, res) => {
 
     // Update profile with results
     profile.analysisResult = analysisResult;
+    
+    // Store LLM responses with questions
+    if (analysisResult.questionsWithResponses) {
+      profile.questions = analysisResult.questionsWithResponses;
+    }
+    
+    // Update competitor data
+    if (analysisResult.competitorAnalysis) {
+      profile.competitors = analysisResult.competitorAnalysis;
+    }
+    
     profile.status = 'completed';
     await profile.save();
+
+    // Create notification
+    await NotificationService.notifyAnalysisComplete(
+      profile,
+      analysisResult.overallScore
+    );
 
     res.json({
       success: true,

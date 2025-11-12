@@ -91,10 +91,18 @@ const AnalysisResultSchema = new mongoose.Schema({
   },
   llmPerformance: {
     type: [{
-      name: String,
+      llmName: String,
       score: Number,
       mentions: Number,
-      citations: Number
+      totalMentions: Number,
+      citations: Number,
+      competitorMentions: mongoose.Schema.Types.Mixed,
+      topSources: [{
+        url: String,
+        weight: Number,
+        mentions: Number,
+        pageType: String
+      }]
     }],
     default: []
   }
