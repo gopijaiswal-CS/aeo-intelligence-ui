@@ -1,98 +1,100 @@
-const { getModel } = require('../config/gemini');
-const axios = require('axios');
-const cheerio = require('cheerio');
+const { getModel } = require("../config/gemini");
+const axios = require("axios");
+const cheerio = require("cheerio");
+const { generateProductsList } = require("../prompts/generateProductsList");
 
 /**
  * Generate products from a website URL using Gemini AI
  */
 async function generateProducts(websiteUrl) {
   try {
-    // Fetch website content
-    let websiteContent = '';
-    try {
-      const response = await axios.get(websiteUrl, {
-        timeout: 10000,
-        headers: {
-          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
-        }
-      });
-      const $ = cheerio.load(response.data);
-      
-      // Extract text content from relevant tags
-      const title = $('title').text();
-      const metaDescription = $('meta[name="description"]').attr('content') || '';
-      const h1 = $('h1').text();
-      const h2 = $('h2').map((i, el) => $(el).text()).get().join(' ');
-      const paragraphs = $('p').map((i, el) => $(el).text()).get().slice(0, 10).join(' ');
-      
-      websiteContent = `Title: ${title}\nDescription: ${metaDescription}\nH1: ${h1}\nH2: ${h2}\nContent: ${paragraphs}`.substring(0, 5000);
-    } catch (error) {
-      console.log('Could not fetch website content, using URL only:', error.message);
-      websiteContent = `Website URL: ${websiteUrl}`;
-    }
+    // Normalize URL
+    const normalizedUrl =
+      websiteUrl.startsWith("http") || websiteUrl.startsWith("https")
+        ? websiteUrl
+        : `https://${websiteUrl}`;
 
-    const model = getModel();
-    const prompt = `Analyze the following website and extract a list of products/services they offer. Return a JSON array of products with id, name, category, and description fields.
+    // Use the generateProductsList prompt template
+    const model = getModel("gemini-2.5-flash");
+    const prompt = generateProductsList(normalizedUrl);
+    // `\n\nWebsite Content for Analysis:\n${websiteContent}`;
 
-Website Content:
-${websiteContent}
-
-Return ONLY a valid JSON array in this exact format:
-[
-  {
-    "id": 1,
-    "name": "Product Name",
-    "category": "Category",
-    "description": "Brief description"
-  }
-]
-
-Identify 3-5 main products/services. Be specific and accurate.`;
-
+    console.log("Prompt:", prompt);
+    // console.log("Generating products for URL:", normalizedUrl);
     const result = await model.generateContent(prompt);
     const response = result.response;
     const text = response.text();
-    
+
+    console.log("Gemini AI Response:", text);
+
     // Extract JSON from response
     let products = [];
     try {
-      // Try to find JSON in the response
-      const jsonMatch = text.match(/\[[\s\S]*\]/);
+      // Try to find JSON in the response (look for json block or array)
+      const jsonMatch =
+        text.match(/<json>\s*(\{[\s\S]*?\})\s*<\/json>/) ||
+        text.match(/\{[\s\S]*?"products"[\s\S]*?\}/) ||
+        text.match(/\[[\s\S]*?\]/);
+
       if (jsonMatch) {
-        products = JSON.parse(jsonMatch[0]);
+        let jsonText = jsonMatch[1] || jsonMatch[0];
+        const parsedData = JSON.parse(jsonText);
+
+        // Handle both formats: {"products": [...]} and [...]
+        const productsList = parsedData.products || parsedData;
+
+        // Convert to our format
+        products = productsList.map((product, index) => ({
+          id: index + 1,
+          name: typeof product === "string" ? product : product.name || product,
+          category: product.category || "General",
+          description: product.description || `${product} product or service`,
+        }));
       } else {
-        // Fallback: create products from response
-        products = [
-          {
-            id: 1,
-            name: 'Product Analysis',
-            category: 'General',
-            description: 'Extracted from website analysis'
-          }
-        ];
+        // Fallback: try to extract product names from text
+        const productNames = text.match(/"([^"]+)"/g);
+        if (productNames && productNames.length > 0) {
+          products = productNames.slice(0, 5).map((name, index) => ({
+            id: index + 1,
+            name: name.replace(/"/g, ""),
+            category: "General",
+            description: "Extracted from website analysis",
+          }));
+        } else {
+          // Last resort fallback
+          products = [
+            {
+              id: 1,
+              name: "Product Analysis",
+              category: "General",
+              description: "Extracted from website analysis",
+            },
+          ];
+        }
       }
     } catch (parseError) {
-      console.error('JSON parsing error:', parseError);
+      console.error("JSON parsing error:", parseError);
+      console.error("Response text:", text);
       // Return default products
       products = [
         {
           id: 1,
-          name: 'Main Product',
-          category: 'General',
-          description: 'Primary product or service'
-        }
+          name: "Main Product",
+          category: "General",
+          description: "Primary product or service",
+        },
       ];
     }
 
     // Suggest regions
-    const suggestedRegions = ['us', 'eu', 'global'];
+    const suggestedRegions = ["us", "uk", "eu", "asia", "global"];
 
     return {
       products,
-      suggestedRegions
+      suggestedRegions,
     };
   } catch (error) {
-    console.error('Error generating products:', error);
+    console.error("Error generating products:", error);
     throw new Error(`Failed to generate products: ${error.message}`);
   }
 }
@@ -103,7 +105,7 @@ Identify 3-5 main products/services. Be specific and accurate.`;
 async function generateQuestionsAndCompetitors(productName, category, region) {
   try {
     const model = getModel();
-    
+
     // Generate Questions
     const questionsPrompt = `Generate 20 diverse test questions that users might ask AI assistants (ChatGPT, Claude, Gemini, Perplexity) about "${productName}" in the "${category}" category for the ${region} region.
 
@@ -130,7 +132,7 @@ Make questions natural and varied.`;
 
     const questionsResult = await model.generateContent(questionsPrompt);
     const questionsText = questionsResult.response.text();
-    
+
     let questions = [];
     try {
       const jsonMatch = questionsText.match(/\[[\s\S]*\]/);
@@ -144,11 +146,11 @@ Make questions natural and varied.`;
           region: region,
           aiMentions: 0,
           visibility: 0,
-          addedBy: 'auto'
+          addedBy: "auto",
         }));
       }
     } catch (parseError) {
-      console.error('Questions JSON parsing error:', parseError);
+      console.error("Questions JSON parsing error:", parseError);
     }
 
     // Generate Competitors
@@ -167,7 +169,7 @@ List real competitors or similar products/services.`;
 
     const competitorsResult = await model.generateContent(competitorsPrompt);
     const competitorsText = competitorsResult.response.text();
-    
+
     let competitors = [];
     try {
       const jsonMatch = competitorsText.match(/\[[\s\S]*\]/);
@@ -181,19 +183,19 @@ List real competitors or similar products/services.`;
           visibility: 0,
           mentions: 0,
           citations: 0,
-          rank: index + 1
+          rank: index + 1,
         }));
       }
     } catch (parseError) {
-      console.error('Competitors JSON parsing error:', parseError);
+      console.error("Competitors JSON parsing error:", parseError);
     }
 
     return {
       questions,
-      competitors
+      competitors,
     };
   } catch (error) {
-    console.error('Error generating questions and competitors:', error);
+    console.error("Error generating questions and competitors:", error);
     throw new Error(`Failed to generate data: ${error.message}`);
   }
 }
@@ -204,7 +206,7 @@ List real competitors or similar products/services.`;
 async function getOptimizationRecommendations(profileData) {
   try {
     const model = getModel();
-    
+
     const prompt = `Analyze this product and provide 5 detailed content optimization recommendations to improve AI visibility and citation weight.
 
 Product: ${profileData.productName}
@@ -237,33 +239,33 @@ Return ONLY valid JSON array.`;
 
     const result = await model.generateContent(prompt);
     const text = result.response.text();
-    
+
     let recommendations = [];
-    let summary = 'AI-powered analysis completed successfully.';
+    let summary = "AI-powered analysis completed successfully.";
     let projectedScore = (profileData.analysisResult?.overallScore || 65) + 12;
-    
+
     try {
       const jsonMatch = text.match(/\[[\s\S]*\]/);
       if (jsonMatch) {
         recommendations = JSON.parse(jsonMatch[0]);
       }
-      
+
       // Extract summary if present
       const summaryMatch = text.match(/summary[:\s]+([^\n]+)/i);
       if (summaryMatch) {
         summary = summaryMatch[1];
       }
     } catch (parseError) {
-      console.error('Recommendations JSON parsing error:', parseError);
+      console.error("Recommendations JSON parsing error:", parseError);
     }
 
     return {
       summary,
       projectedScore: Math.min(projectedScore, 98),
-      recommendations
+      recommendations,
     };
   } catch (error) {
-    console.error('Error getting optimization recommendations:', error);
+    console.error("Error getting optimization recommendations:", error);
     throw new Error(`Failed to get recommendations: ${error.message}`);
   }
 }
@@ -271,6 +273,5 @@ Return ONLY valid JSON array.`;
 module.exports = {
   generateProducts,
   generateQuestionsAndCompetitors,
-  getOptimizationRecommendations
+  getOptimizationRecommendations,
 };
-

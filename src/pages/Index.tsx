@@ -1,13 +1,27 @@
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Search, Sparkles, TrendingUp, Award, CheckCircle } from "lucide-react";
+import {
+  Search,
+  Sparkles,
+  TrendingUp,
+  Award,
+  CheckCircle,
+  Loader2,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { toast } from "sonner";
-import productsData from "@/data/products.json";
+import { generateProducts } from "@/services/api";
+import type { Product } from "@/services/api";
 
 const Index = () => {
   const navigate = useNavigate();
@@ -15,6 +29,8 @@ const Index = () => {
   const [selectedProduct, setSelectedProduct] = useState("");
   const [selectedRegion, setSelectedRegion] = useState("");
   const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [isLoadingProducts, setIsLoadingProducts] = useState(false);
+  const [generatedProducts, setGeneratedProducts] = useState<Product[]>([]);
 
   const regions = [
     { value: "us", label: "United States" },
@@ -24,6 +40,59 @@ const Index = () => {
     { value: "global", label: "Global" },
   ];
 
+  // Debounced function to fetch products from API
+  const fetchProducts = useCallback(async (url: string) => {
+    if (!url) {
+      setGeneratedProducts([]);
+      return;
+    }
+
+    // Basic URL validation
+    const urlPattern =
+      /^(https?:\/\/)?([\da-z\.-]+)\.([a-z\.]{2,6})([\/\w \.-]*)*\/?$/;
+    if (!urlPattern.test(url)) {
+      return;
+    }
+
+    setIsLoadingProducts(true);
+    try {
+      const response = await generateProducts(url);
+
+      console.log(response);
+      if (response.success && response.data) {
+        setGeneratedProducts(response.data.products);
+        toast.success(
+          `Found ${response.data.products.length} products/services!`
+        );
+
+        // Auto-select first product if available
+        if (response.data.products.length > 0) {
+          setSelectedProduct(response.data.products[0].id.toString());
+        }
+      } else {
+        toast.error(response.error?.message || "Failed to fetch products");
+        setGeneratedProducts([]);
+      }
+    } catch (error: any) {
+      console.error("Error fetching products:", error);
+      toast.error("Failed to fetch products from website");
+      setGeneratedProducts([]);
+    } finally {
+      setIsLoadingProducts(false);
+    }
+  }, []);
+
+  // Debounce URL input
+  // useEffect(() => {
+  //   const timer = setTimeout(() => {
+  //     if (websiteUrl) {
+  //       fetchProducts(websiteUrl);
+  //     }
+  //   }, 1000); // Wait 1 second after user stops typing
+
+  //   return () => clearTimeout(timer);
+  // }, [websiteUrl, fetchProducts]);
+
   const handleStartAnalysis = async () => {
     if (!websiteUrl || !selectedProduct || !selectedRegion) {
       toast.error("Please fill in all fields to continue");
@@ -31,19 +100,19 @@ const Index = () => {
     }
 
     setIsAnalyzing(true);
-    
+
     // Simulate URL analysis
-    await new Promise(resolve => setTimeout(resolve, 2000));
-    
+    await new Promise((resolve) => setTimeout(resolve, 2000));
+
     toast.success("Analysis started successfully!");
     setIsAnalyzing(false);
-    
+
     // Navigate to dashboard with context
-    navigate(`/product/${selectedProduct}`, { 
-      state: { 
-        url: websiteUrl, 
-        region: selectedRegion 
-      } 
+    navigate(`/product/${selectedProduct}`, {
+      state: {
+        url: websiteUrl,
+        region: selectedRegion,
+      },
     });
   };
 
@@ -59,18 +128,21 @@ const Index = () => {
         >
           <div className="inline-flex items-center gap-2 px-4 py-2 bg-primary/10 rounded-full mb-6">
             <Sparkles className="h-4 w-4 text-primary" />
-            <span className="text-sm font-medium text-primary">AI-Powered AEO Intelligence</span>
+            <span className="text-sm font-medium text-primary">
+              AI-Powered AEO Intelligence
+            </span>
           </div>
-          
+
           <h1 className="text-5xl md:text-6xl font-bold mb-6 bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
             Optimize Your Brand for
             <br />
             <span className="text-primary">AI Search Engines</span>
           </h1>
-          
+
           <p className="text-xl text-muted-foreground max-w-2xl mx-auto mb-12">
-            Discover how ChatGPT, Gemini, and other AI models perceive your brand. 
-            Get actionable insights to improve your Answer Engine Optimization.
+            Discover how ChatGPT, Gemini, and other AI models perceive your
+            brand. Get actionable insights to improve your Answer Engine
+            Optimization.
           </p>
 
           {/* Feature Cards */}
@@ -82,7 +154,7 @@ const Index = () => {
                 Track how often AI models mention your brand
               </p>
             </Card>
-            
+
             <Card className="p-6 border-primary/20 hover:border-primary/40 transition-colors">
               <Award className="h-10 w-10 text-primary mb-4 mx-auto" />
               <h3 className="font-semibold mb-2">Citation Analysis</h3>
@@ -90,7 +162,7 @@ const Index = () => {
                 Analyze quality and weight of AI citations
               </p>
             </Card>
-            
+
             <Card className="p-6 border-primary/20 hover:border-primary/40 transition-colors">
               <CheckCircle className="h-10 w-10 text-primary mb-4 mx-auto" />
               <h3 className="font-semibold mb-2">AEO Recommendations</h3>
@@ -110,7 +182,9 @@ const Index = () => {
         >
           <Card className="p-8 shadow-xl border-primary/10">
             <div className="mb-6">
-              <h2 className="text-2xl font-bold mb-2">Start Your AEO Analysis</h2>
+              <h2 className="text-2xl font-bold mb-2">
+                Start Your AEO Analysis
+              </h2>
               <p className="text-muted-foreground">
                 Enter your website URL and select a product to analyze
               </p>
@@ -135,27 +209,63 @@ const Index = () => {
 
               <div>
                 <label className="block text-sm font-medium mb-2">
-                  Select Product
+                  Select Product{" "}
+                  {isLoadingProducts && (
+                    <span className="text-muted-foreground text-xs">
+                      (Loading...)
+                    </span>
+                  )}
                 </label>
-                <Select value={selectedProduct} onValueChange={setSelectedProduct}>
+                <Select
+                  value={selectedProduct}
+                  onValueChange={setSelectedProduct}
+                  disabled={isLoadingProducts || generatedProducts.length === 0}
+                >
                   <SelectTrigger className="h-12 text-lg">
-                    <SelectValue placeholder="Choose a product to analyze..." />
+                    {isLoadingProducts ? (
+                      <div className="flex items-center gap-2">
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                        <span>Fetching products...</span>
+                      </div>
+                    ) : (
+                      <SelectValue
+                        placeholder={
+                          generatedProducts.length > 0
+                            ? "Choose a product to analyze..."
+                            : "Enter website URL first to fetch products"
+                        }
+                      />
+                    )}
                   </SelectTrigger>
                   <SelectContent>
-                    {productsData.map((product) => (
-                      <SelectItem key={product.id} value={product.id.toString()}>
-                        {product.name} ({product.category})
+                    {generatedProducts.map((product) => (
+                      <SelectItem
+                        key={product.id}
+                        value={product.id.toString()}
+                      >
+                        {product.name}{" "}
+                        {product.category && `(${product.category})`}
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
+                {generatedProducts.length > 0 && (
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {generatedProducts.length} product
+                    {generatedProducts.length !== 1 ? "s" : ""} found from
+                    website
+                  </p>
+                )}
               </div>
 
               <div>
                 <label className="block text-sm font-medium mb-2">
                   Target Region
                 </label>
-                <Select value={selectedRegion} onValueChange={setSelectedRegion}>
+                <Select
+                  value={selectedRegion}
+                  onValueChange={setSelectedRegion}
+                >
                   <SelectTrigger className="h-12 text-lg">
                     <SelectValue placeholder="Select target region..." />
                   </SelectTrigger>
