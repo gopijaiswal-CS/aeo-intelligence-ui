@@ -276,6 +276,11 @@ ${generalSources.join(', ')}
  * Analyze LLM responses to calculate metrics
  */
 function analyzeLLMResponses(llmName, answers, productName, competitors) {
+  console.log(`\n🔍 Analyzing ${llmName} responses...`);
+  console.log(`  Answers: ${answers?.length || 0}`);
+  console.log(`  Product: ${productName}`);
+  console.log(`  Competitors: ${competitors?.length || 0}`);
+  
   let productMentions = 0;
   let totalMentions = 0;
   const competitorMentions = {};

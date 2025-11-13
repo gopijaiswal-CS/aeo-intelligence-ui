@@ -288,6 +288,20 @@ exports.runAnalysis = async (req, res) => {
 
     // Run analysis
     const analysisResult = await runAEOAnalysis(profile);
+    
+    console.log('\n📊 Analysis Result Summary:');
+    console.log(`- llmPerformance length: ${analysisResult.llmPerformance?.length || 0}`);
+    console.log(`- competitorAnalysis length: ${analysisResult.competitorAnalysis?.length || 0}`);
+    console.log(`- citationSources length: ${analysisResult.citationSources?.length || 0}`);
+    
+    if (analysisResult.llmPerformance && analysisResult.llmPerformance.length > 0) {
+      console.log('\n✅ LLM Performance Data:');
+      analysisResult.llmPerformance.forEach(llm => {
+        console.log(`  ${llm.llmName}: ${llm.score}% (${llm.mentions} mentions, ${llm.citations} citations)`);
+      });
+    } else {
+      console.log('\n❌ WARNING: llmPerformance is empty!');
+    }
 
     // Update profile with results
     profile.analysisResult = analysisResult;

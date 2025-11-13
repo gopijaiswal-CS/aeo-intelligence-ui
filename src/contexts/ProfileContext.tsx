@@ -123,13 +123,15 @@ export const ProfileProvider = ({ children }: { children: ReactNode }) => {
   const updateProfile = async (id: string, updates: Partial<Profile>): Promise<void> => {
     try {
       // Update locally first for immediate UI feedback
-      setProfiles((prev) =>
-        prev.map((profile) =>
+      setProfiles((prev) => {
+        // Defensive check: ensure prev is always an array
+        const profilesArray = Array.isArray(prev) ? prev : [];
+        return profilesArray.map((profile) =>
           profile.id === id
             ? { ...profile, ...updates, lastUpdated: new Date().toISOString() }
             : profile
-        )
-      );
+        );
+      });
 
       if (currentProfile?.id === id) {
         setCurrentProfileState((prev) => prev ? { ...prev, ...updates } : null);
@@ -210,6 +212,47 @@ export const ProfileProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const runAnalysis = async (profileId: string): Promise<void> => {
+    try {
+      // Update status to analyzing
+      updateProfile(profileId, { status: "analyzing" });
+
+      console.log(`🚀 Running analysis for profile: ${profileId}`);
+
+      // Call REAL backend API
+      const response = await api.runAnalysis(profileId);
+
+      if (response.success && response.data) {
+        console.log('✅ Analysis completed successfully');
+        
+        // Fetch updated profile from backend
+        const profileResponse = await api.getProfiles();
+        if (profileResponse.success && profileResponse.data) {
+          // API returns { data: { profiles: [...], total: N } }
+          const profilesArray = Array.isArray(profileResponse.data) 
+            ? profileResponse.data 
+            : profileResponse.data.profiles || [];
+          
+          setProfiles(profilesArray);
+          
+          // Update current profile
+          const updatedProfile = profilesArray.find((p: Profile) => p.id === profileId);
+          if (updatedProfile) {
+            setCurrentProfileState(updatedProfile);
+          }
+        }
+      } else {
+        throw new Error(response.error?.message || 'Analysis failed');
+      }
+    } catch (error: any) {
+      console.error('❌ Analysis error:', error);
+      // Reset status on error
+      updateProfile(profileId, { status: "ready" });
+      throw error;
+    }
+  };
+
+  // OLD MOCK CODE - REMOVED
+  const runAnalysis_OLD_MOCK = async (profileId: string): Promise<void> => {
     updateProfile(profileId, { status: "analyzing" });
 
     // Simulate analysis

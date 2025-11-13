@@ -39,6 +39,56 @@ import type { Question, Competitor } from "@/contexts/ProfileContext";
 import { generateStackIQReport } from "@/utils/reportGenerator";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from "recharts";
 
+// Helper functions for LLM analysis
+function generateStrengths(llmData: any): string[] {
+  const strengths = [];
+  
+  if (llmData.score >= 75) {
+    strengths.push(`Strong ${llmData.score}% visibility across queries`);
+  } else if (llmData.score >= 60) {
+    strengths.push(`Good ${llmData.score}% visibility performance`);
+  }
+  
+  if (llmData.citations >= 50) {
+    strengths.push(`High citation count (${llmData.citations} sources)`);
+  }
+  
+  if (llmData.topSources && llmData.topSources.length > 0) {
+    const avgWeight = llmData.topSources.reduce((sum: number, s: any) => sum + s.weight, 0) / llmData.topSources.length;
+    if (avgWeight >= 8) {
+      strengths.push("High-authority citation sources");
+    }
+  }
+  
+  if (strengths.length === 0) {
+    strengths.push("Presence established in AI responses");
+  }
+  
+  return strengths;
+}
+
+function generateImprovements(llmData: any): string[] {
+  const improvements = [];
+  
+  if (llmData.score < 60) {
+    improvements.push("Increase content depth and quality");
+  }
+  
+  if (llmData.citations < 30) {
+    improvements.push("Build more authoritative citations");
+  }
+  
+  if (llmData.topSources && llmData.topSources.length < 3) {
+    improvements.push("Expand citation source diversity");
+  }
+  
+  if (improvements.length === 0) {
+    improvements.push("Maintain current performance levels");
+  }
+  
+  return improvements;
+}
+
 export default function ProfileAnalysis() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -363,117 +413,33 @@ export default function ProfileAnalysis() {
                 <h3 className="text-lg font-semibold mb-4">LLM Performance</h3>
                 <p className="text-xs text-muted-foreground mb-4">Click any LLM to view detailed analytics</p>
                 <div className="space-y-4">
-                  {[
-                    { 
-                      name: "ChatGPT", 
-                      score: 82, 
-                      color: "bg-green-500",
-                      icon: "🤖",
-                      mentions: 245,
-                      citations: 89,
-                      topSources: [
-                        { url: "techcrunch.com", weight: 9.2, mentions: 34 },
-                        { url: "theverge.com", weight: 8.8, mentions: 28 },
-                        { url: "cnet.com", weight: 8.5, mentions: 25 },
-                      ],
-                      categoryPerformance: [
-                        { category: "Product Recommendation", score: 88 },
-                        { category: "Feature Comparison", score: 82 },
-                        { category: "How-To", score: 79 },
-                        { category: "Technical", score: 75 },
-                      ],
-                      strengths: [
-                        "Strong presence in product recommendation queries",
-                        "High citation quality from tech publications",
-                        "Consistent mentions across all question categories"
-                      ],
-                      improvements: [
-                        "Increase technical documentation depth",
-                        "Add more use case examples",
-                      ]
-                    },
-                    { 
-                      name: "Claude", 
-                      score: 76, 
-                      color: "bg-purple-500",
-                      icon: "🎯",
-                      mentions: 198,
-                      citations: 72,
-                      topSources: [
-                        { url: "producthunt.com", weight: 8.9, mentions: 31 },
-                        { url: "medium.com", weight: 8.3, mentions: 26 },
-                        { url: "zdnet.com", weight: 7.8, mentions: 22 },
-                      ],
-                      categoryPerformance: [
-                        { category: "Product Recommendation", score: 81 },
-                        { category: "Feature Comparison", score: 78 },
-                        { category: "How-To", score: 74 },
-                        { category: "Technical", score: 71 },
-                      ],
-                      strengths: [
-                        "Good performance in comparison queries",
-                        "Strong community discussion presence",
-                      ],
-                      improvements: [
-                        "Build more authoritative citations",
-                        "Improve technical query responses",
-                      ]
-                    },
-                    { 
-                      name: "Gemini", 
-                      score: 71, 
-                      color: "bg-blue-500",
-                      icon: "✨",
-                      mentions: 176,
-                      citations: 64,
-                      topSources: [
-                        { url: "wired.com", weight: 8.1, mentions: 29 },
-                        { url: "engadget.com", weight: 7.6, mentions: 24 },
-                        { url: "androidauthority.com", weight: 7.2, mentions: 19 },
-                      ],
-                      categoryPerformance: [
-                        { category: "Product Recommendation", score: 76 },
-                        { category: "Feature Comparison", score: 73 },
-                        { category: "How-To", score: 68 },
-                        { category: "Technical", score: 66 },
-                      ],
-                      strengths: [
-                        "Growing presence in mobile/tech space",
-                        "Good integration citations",
-                      ],
-                      improvements: [
-                        "Expand into more question categories",
-                        "Increase citation weight from tier-1 sources",
-                      ]
-                    },
-                    { 
-                      name: "Perplexity", 
-                      score: 68, 
-                      color: "bg-orange-500",
-                      icon: "🔍",
-                      mentions: 154,
-                      citations: 58,
-                      topSources: [
-                        { url: "tomsguide.com", weight: 7.9, mentions: 27 },
-                        { url: "digitaltrends.com", weight: 7.4, mentions: 21 },
-                        { url: "pcmag.com", weight: 7.1, mentions: 18 },
-                      ],
-                      categoryPerformance: [
-                        { category: "Product Recommendation", score: 72 },
-                        { category: "Feature Comparison", score: 70 },
-                        { category: "How-To", score: 65 },
-                        { category: "Technical", score: 63 },
-                      ],
-                      strengths: [
-                        "Emerging AI platform with growth potential",
-                        "Good review site citations",
-                      ],
-                      improvements: [
-                        "Build presence across all categories",
-                        "Focus on authoritative source citations",
-                      ]
-                    },
-                  ].map((llm) => (
+                  {(profile?.analysisResult?.llmPerformance || []).map((llmData: any) => {
+                    // Map LLM names to icons and colors
+                    const llmConfig: Record<string, { icon: string; color: string }> = {
+                      'ChatGPT': { icon: '🤖', color: 'bg-green-500' },
+                      'Claude': { icon: '🎯', color: 'bg-purple-500' },
+                      'Gemini': { icon: '✨', color: 'bg-blue-500' },
+                      'Perplexity': { icon: '🔍', color: 'bg-orange-500' }
+                    };
+
+                    const config = llmConfig[llmData.llmName] || { icon: '🤖', color: 'bg-gray-500' };
+
+                    const llm = {
+                      name: llmData.llmName,
+                      score: llmData.score,
+                      color: config.color,
+                      icon: config.icon,
+                      mentions: llmData.mentions,
+                      citations: llmData.citations,
+                      topSources: llmData.topSources || [],
+                      competitorMentions: llmData.competitorMentions || {},
+                      categoryPerformance: [], // Can be calculated from questions if needed
+                      strengths: generateStrengths(llmData),
+                      improvements: generateImprovements(llmData)
+                    };
+
+                    return llm;
+                  }).map((llm: any) => (
                     <motion.div
                       key={llm.name}
                       className="space-y-2 cursor-pointer p-2 rounded-lg hover:bg-muted/50 transition-colors"
@@ -501,11 +467,19 @@ export default function ProfileAnalysis() {
                     </motion.div>
                   ))}
                 </div>
-                <div className="mt-4 p-3 bg-primary/5 rounded-lg">
-                  <p className="text-xs text-muted-foreground">
-                    <strong className="text-foreground">Best Performance:</strong> ChatGPT with 82% visibility
-                  </p>
-                </div>
+                {profile?.analysisResult?.llmPerformance && profile.analysisResult.llmPerformance.length > 0 && (
+                  <div className="mt-4 p-3 bg-primary/5 rounded-lg">
+                    <p className="text-xs text-muted-foreground">
+                      <strong className="text-foreground">Best Performance:</strong> {
+                        [...profile.analysisResult.llmPerformance]
+                          .sort((a: any, b: any) => b.score - a.score)[0]?.llmName
+                      } with {
+                        [...profile.analysisResult.llmPerformance]
+                          .sort((a: any, b: any) => b.score - a.score)[0]?.score
+                      }% visibility
+                    </p>
+                  </div>
+                )}
               </Card>
 
               {/* Question Category Distribution */}
