@@ -302,6 +302,15 @@ exports.runAnalysis = async (req, res) => {
     } else {
       console.log('\n❌ WARNING: llmPerformance is empty!');
     }
+    
+    if (analysisResult.competitorAnalysis && analysisResult.competitorAnalysis.length > 0) {
+      console.log('\n✅ Competitor Analysis Data:');
+      analysisResult.competitorAnalysis.forEach(comp => {
+        console.log(`  ${comp.name}: Rank #${comp.rank}, Visibility ${comp.visibility}%, ${comp.mentions} mentions${comp.isUserProduct ? ' (Your Product)' : ''}`);
+      });
+    } else {
+      console.log('\n❌ WARNING: competitorAnalysis is empty!');
+    }
 
     // Update profile with results
     profile.analysisResult = analysisResult;
@@ -311,13 +320,29 @@ exports.runAnalysis = async (req, res) => {
       profile.questions = analysisResult.questionsWithResponses;
     }
     
-    // Update competitor data
+    // Update competitor data (exclude user's product)
     if (analysisResult.competitorAnalysis) {
-      profile.competitors = analysisResult.competitorAnalysis;
+      // Filter out user's product from competitor list
+      profile.competitors = analysisResult.competitorAnalysis.filter(item => !item.isUserProduct);
     }
     
     profile.status = 'completed';
     await profile.save();
+    
+    // Verify data was saved correctly
+    console.log('\n✅ Profile saved successfully!');
+    console.log(`- Profile ID: ${profile._id}`);
+    console.log(`- analysisResult.competitorAnalysis length after save: ${profile.analysisResult?.competitorAnalysis?.length || 0}`);
+    console.log(`- profile.competitors length (should exclude user product): ${profile.competitors?.length || 0}`);
+    console.log(`- analysisResult.llmPerformance length after save: ${profile.analysisResult?.llmPerformance?.length || 0}`);
+    
+    // Log competitor names to verify no duplicates
+    if (profile.competitors && profile.competitors.length > 0) {
+      console.log('\n📋 Competitors saved:');
+      profile.competitors.forEach((comp, idx) => {
+        console.log(`  ${idx + 1}. ${comp.name} (Rank #${comp.rank})`);
+      });
+    }
 
     // Create notification
     await NotificationService.notifyAnalysisComplete(
@@ -327,7 +352,7 @@ exports.runAnalysis = async (req, res) => {
 
     res.json({
       success: true,
-      data: analysisResult
+      data: profile
     });
   } catch (error) {
     console.error('Error running analysis:', error);

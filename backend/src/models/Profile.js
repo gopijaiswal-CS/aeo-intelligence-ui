@@ -105,6 +105,19 @@ const AnalysisResultSchema = new mongoose.Schema({
       }]
     }],
     default: []
+  },
+  competitorAnalysis: {
+    type: [{
+      id: String,
+      name: String,
+      category: String,
+      visibility: Number,
+      mentions: Number,
+      citations: Number,
+      rank: Number,
+      isUserProduct: Boolean
+    }],
+    default: []
   }
 }, { _id: false });
 

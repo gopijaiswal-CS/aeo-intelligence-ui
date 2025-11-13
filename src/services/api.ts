@@ -244,12 +244,10 @@ export interface GenerateQuestionsResponse {
  * Generate questions and competitors for a profile
  */
 export async function generateQuestionsAndCompetitors(
-  profileId: string,
-  data: { productName: string; category: string; region: string }
+  profileId: string
 ): Promise<ApiResponse<GenerateQuestionsResponse>> {
   return apiRequest<GenerateQuestionsResponse>(`/profiles/${profileId}/generate`, {
     method: 'POST',
-    body: JSON.stringify(data),
   });
 }
 
@@ -261,12 +259,10 @@ export async function generateQuestionsAndCompetitors(
  * Run AEO analysis for a profile
  */
 export async function runAnalysis(
-  profileId: string,
-  data: { questions: Question[]; competitors: Competitor[] }
-): Promise<ApiResponse<AnalysisResult>> {
-  return apiRequest<AnalysisResult>(`/profiles/${profileId}/analyze`, {
+  profileId: string
+): Promise<ApiResponse<Profile>> {
+  return apiRequest<Profile>(`/profiles/${profileId}/analyze`, {
     method: 'POST',
-    body: JSON.stringify(data),
   });
 }
 

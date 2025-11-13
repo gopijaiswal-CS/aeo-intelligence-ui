@@ -164,10 +164,10 @@ ${generalSources.join(', ')}
 </important>`;
 
     console.log(`[${llmName}] Querying with ${questions.length} questions...`);
-    
-    const result = await model.generateContent(prompt);
-    const responseText = result.response.text();
-    
+
+          const result = await model.generateContent(prompt);
+          const responseText = result.response.text();
+          
     console.log(`[${llmName}] Response received, parsing...`);
     
     // Parse JSON response
@@ -179,14 +179,14 @@ ${generalSources.join(', ')}
         responseText.match(/```\s*(\{[\s\S]*?\})\s*```/) ||
         responseText.match(/\{[\s\S]*?"answers"[\s\S]*?\}/);
       
-      if (jsonMatch) {
+            if (jsonMatch) {
         let jsonText = jsonMatch[1] || jsonMatch[0];
         jsonText = jsonText.replace(/```json|```/g, '').trim();
         parsedResponse = JSON.parse(jsonText);
       } else {
         throw new Error('No JSON found in response');
-      }
-    } catch (parseError) {
+            }
+          } catch (parseError) {
       console.error(`[${llmName}] JSON parsing error:`, parseError.message);
       console.error('Response text:', responseText.substring(0, 500));
       
@@ -470,7 +470,21 @@ async function runAEOAnalysis(profile) {
       };
     });
     
-    // Sort by visibility and assign ranks
+    // Add user's product to the comparison
+    const userProductAnalysis = {
+      id: 'user-product',
+      name: productName,
+      category: category,
+      visibility: overallScore,
+      mentions: totalMentions,
+      citations: totalCitations,
+      rank: 0, // Will be set after sorting
+      isUserProduct: true // Flag to identify user's product
+    };
+    
+    competitorAnalysis.push(userProductAnalysis);
+    
+    // Sort by visibility (highest first) and assign ranks
     competitorAnalysis.sort((a, b) => b.visibility - a.visibility);
     competitorAnalysis.forEach((comp, idx) => {
       comp.rank = idx + 1;
@@ -523,69 +537,6 @@ async function runAEOAnalysis(profile) {
   }
 }
 
-/**
- * Run SEO health check for a website
- */
-async function runSEOHealthCheck(websiteUrl) {
-  try {
-    // In production, integrate with actual SEO tools (Lighthouse, PageSpeed, etc.)
-    // For now, return mock data with some basic checks
-    
-    const overallScore = Math.round(Math.random() * 20 + 75);
-    
-    const categories = {
-      technicalSeo: {
-        score: Math.round(Math.random() * 15 + 85),
-        status: 'excellent',
-        issues: []
-      },
-      onPageSeo: {
-        score: Math.round(Math.random() * 15 + 80),
-        status: 'excellent',
-        issues: []
-      },
-      contentQuality: {
-        score: Math.round(Math.random() * 25 + 70),
-        status: 'good',
-        issues: ['Some pages could use more depth', 'Add more internal links']
-      },
-      brokenLinks: {
-        score: Math.round(Math.random() * 40 + 50),
-        status: 'warning',
-        count: Math.floor(Math.random() * 8 + 2)
-      }
-    };
-    
-    const actionItems = [
-      {
-        priority: 'high',
-        title: 'Fix Broken Links',
-        description: `${categories.brokenLinks.count} broken links need attention`
-      },
-      {
-        priority: 'medium',
-        title: 'Improve Content Depth',
-        description: 'Add more comprehensive content to key pages'
-      },
-      {
-        priority: 'low',
-        title: 'Optimize Images',
-        description: 'Compress images for faster loading'
-      }
-    ];
-    
-    return {
-      overallScore,
-      categories,
-      actionItems
-    };
-  } catch (error) {
-    console.error('Error running SEO health check:', error);
-    throw new Error(`Failed to run SEO check: ${error.message}`);
-  }
-}
-
 module.exports = {
-  runAEOAnalysis,
-  runSEOHealthCheck
+  runAEOAnalysis
 };

@@ -13,6 +13,7 @@ export interface Question {
 }
 
 export interface Competitor {
+  _id?: string;  // MongoDB document ID
   id: number;
   name: string;
   visibility: number;
@@ -20,6 +21,7 @@ export interface Competitor {
   citations: number;
   rank: number;
   category: string;
+  isUserProduct?: boolean;  // Flag to identify if this is the user's product
 }
 
 export interface AnalysisResult {
@@ -35,6 +37,29 @@ export interface AnalysisResult {
     llm: string;
     weight: number;
     mentions: number;
+  }>;
+  llmPerformance?: Array<{
+    llmName: string;
+    score: number;
+    mentions: number;
+    citations: number;
+    topSources: Array<{
+      url: string;
+      weight: number;
+      productMentioned: boolean;
+      competitorsMentioned: string[];
+    }>;
+    competitorMentions: Record<string, number>;
+  }>;
+  competitorAnalysis?: Array<{
+    id: string;
+    name: string;
+    category: string;
+    visibility: number;
+    mentions: number;
+    citations: number;
+    rank: number;
+    isUserProduct?: boolean;
   }>;
 }
 

@@ -96,6 +96,7 @@ export default function ProfileAnalysis() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showCompetitorModal, setShowCompetitorModal] = useState(false);
+  const [showAllCitations, setShowAllCitations] = useState(false);
   
   // Edit form states
   const [showAddQuestion, setShowAddQuestion] = useState(false);
@@ -525,7 +526,10 @@ export default function ProfileAnalysis() {
               <Card className="p-6">
                 <h3 className="text-lg font-semibold mb-4">Citation Sources</h3>
                 <div className="space-y-3">
-                  {profile.analysisResult.citationSources.map((source, index) => (
+                  {(showAllCitations 
+                    ? profile.analysisResult.citationSources 
+                    : profile.analysisResult.citationSources.slice(0, 5)
+                  ).map((source, index) => (
                     <div
                       key={index}
                       className="flex items-start justify-between p-3 rounded-lg bg-muted/50 hover:bg-muted transition-colors"
@@ -550,6 +554,19 @@ export default function ProfileAnalysis() {
                     </div>
                   ))}
                 </div>
+                {profile.analysisResult.citationSources.length > 5 && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="w-full mt-3"
+                    onClick={() => setShowAllCitations(!showAllCitations)}
+                  >
+                    {showAllCitations 
+                      ? `Show Less` 
+                      : `Show All (${profile.analysisResult.citationSources.length})`
+                    }
+                  </Button>
+                )}
               </Card>
 
               {/* Compact Competitors */}
@@ -558,9 +575,9 @@ export default function ProfileAnalysis() {
                   Top Competitors
                 </h3>
                 <div className="space-y-3">
-                  {profile.competitors.slice(0, 3).map((competitor) => (
+                  {profile.competitors.slice(0, 3).map((competitor, index) => (
                     <div
-                      key={competitor.id}
+                      key={competitor._id || competitor.id || `competitor-${index}`}
                       className="flex items-center justify-between p-2 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors"
                     >
                       <div className="flex-1 min-w-0">
@@ -1105,7 +1122,7 @@ export default function ProfileAnalysis() {
                               const isWinning = (source.yourProductScore || Math.floor(source.weight * 3.2)) > competitorScore;
                               
                               return (
-                                <div key={competitor.id} className="flex items-center justify-between p-2 rounded-lg bg-muted/30">
+                                <div key={competitor._id || competitor.id || `comp-${compIdx}`} className="flex items-center justify-between p-2 rounded-lg bg-muted/30">
                                   <div className="flex items-center gap-3">
                                     <div className={`w-2 h-2 rounded-full ${compIdx === 0 ? 'bg-orange-500' : compIdx === 1 ? 'bg-blue-500' : 'bg-purple-500'}`} />
                                     <div>
@@ -1361,26 +1378,32 @@ export default function ProfileAnalysis() {
           </DialogHeader>
 
           <div className="space-y-6 mt-4">
+            {/* Debug Info */}
+            {(!profile?.analysisResult?.competitorAnalysis || profile.analysisResult.competitorAnalysis.length === 0) && (
+              <Card className="p-4 bg-warning/10 border-warning">
+                <p className="text-sm text-warning-foreground">
+                  ⚠️ No competitor analysis data available. This profile may need to be re-run with the updated analysis engine.
+                </p>
+                <p className="text-xs text-muted-foreground mt-2">
+                  Debug: competitorAnalysis length = {profile?.analysisResult?.competitorAnalysis?.length || 0}
+                </p>
+              </Card>
+            )}
+
             {/* Comparison Chart */}
-            <Card className="p-6">
-              <h3 className="text-lg font-semibold mb-4">Visibility & Mentions Comparison</h3>
-              <ResponsiveContainer width="100%" height={400}>
-                <BarChart 
-                  data={[
-                    {
-                      name: profile?.productName || "Your Product",
-                      visibility: profile?.analysisResult?.overallScore || 0,
-                      mentions: profile?.analysisResult?.mentions || 0,
-                      isYourProduct: true
-                    },
-                    ...(profile?.competitors || []).map(c => ({
-                      name: c.name,
-                      visibility: c.visibility,
-                      mentions: c.mentions,
-                      isYourProduct: false
-                    }))
-                  ]}
-                >
+            {profile?.analysisResult?.competitorAnalysis && profile.analysisResult.competitorAnalysis.length > 0 ? (
+              <>
+                <Card className="p-6">
+                  <h3 className="text-lg font-semibold mb-4">Visibility & Mentions Comparison</h3>
+                  <ResponsiveContainer width="100%" height={400}>
+                    <BarChart 
+                      data={(profile?.analysisResult?.competitorAnalysis || []).map(c => ({
+                        name: c.name,
+                        visibility: c.visibility,
+                        mentions: c.mentions,
+                        isYourProduct: c.isUserProduct || false
+                      }))}
+                    >
                   <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
                   <XAxis 
                     dataKey="name" 
@@ -1419,100 +1442,74 @@ export default function ProfileAnalysis() {
             <div className="space-y-3">
               <h3 className="text-lg font-semibold">Detailed Metrics</h3>
               
-              {/* Your Product Card */}
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="p-6 rounded-lg border-2 border-primary bg-primary/5"
-              >
-                <div className="flex items-start justify-between">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-2">
-                      <Award className="h-5 w-5 text-primary" />
-                      <h4 className="font-bold text-lg">{profile?.productName}</h4>
-                      <Badge className="bg-primary text-white">Your Product</Badge>
-                    </div>
-                    <p className="text-sm text-muted-foreground mb-4">
-                      {profile?.category} • {profile?.region.toUpperCase()}
-                    </p>
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                      <div>
-                        <p className="text-xs text-muted-foreground">Visibility Score</p>
-                        <p className="text-2xl font-bold text-primary">
-                          {profile?.analysisResult?.overallScore || 0}%
-                        </p>
-                      </div>
-                      <div>
-                        <p className="text-xs text-muted-foreground">Total Mentions</p>
-                        <p className="text-2xl font-bold">
-                          {profile?.analysisResult?.mentions || 0}
-                        </p>
-                      </div>
-                      <div>
-                        <p className="text-xs text-muted-foreground">Citations</p>
-                        <p className="text-2xl font-bold">
-                          {profile?.analysisResult?.citations || 0}
-                        </p>
-                      </div>
-                      <div>
-                        <p className="text-xs text-muted-foreground">Rank</p>
-                        <p className="text-2xl font-bold text-primary">#1</p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </motion.div>
-
-              {/* Competitor Cards */}
-              {profile?.competitors.map((competitor, idx) => (
+              {/* All Products (including user's product) */}
+              {(profile?.analysisResult?.competitorAnalysis || []).map((item, idx) => (
                 <motion.div
-                  key={competitor.id}
+                  key={item.id || idx}
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: idx * 0.1 }}
-                  className="p-6 rounded-lg border bg-card hover:shadow-md transition-all"
+                  className={item.isUserProduct 
+                    ? "p-6 rounded-lg border-2 border-primary bg-primary/5"
+                    : "p-6 rounded-lg border bg-card hover:shadow-md transition-all"
+                  }
                 >
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
                       <div className="flex items-center gap-2 mb-2">
-                        <h4 className="font-semibold text-lg">{competitor.name}</h4>
-                        <Badge variant="outline">#{competitor.rank}</Badge>
+                        {item.isUserProduct && <Award className="h-5 w-5 text-primary" />}
+                        <h4 className={`font-semibold text-lg ${item.isUserProduct ? 'font-bold' : ''}`}>
+                          {item.name}
+                        </h4>
+                        {item.isUserProduct ? (
+                          <Badge className="bg-primary text-white">Your Product</Badge>
+                        ) : (
+                          <Badge variant="outline">Competitor</Badge>
+                        )}
+                        <Badge variant={item.rank === 1 ? "default" : "outline"}>
+                          #{item.rank}
+                        </Badge>
                       </div>
-                      <p className="text-sm text-muted-foreground mb-4">{competitor.category}</p>
+                      <p className="text-sm text-muted-foreground mb-4">
+                        {item.category}
+                      </p>
                       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                         <div>
                           <p className="text-xs text-muted-foreground">Visibility Score</p>
-                          <div className="flex items-center gap-2">
-                            <p className="text-2xl font-bold">{competitor.visibility}%</p>
-                            {competitor.visibility < (profile?.analysisResult?.overallScore || 0) ? (
-                              <Badge className="bg-success/10 text-success text-xs">
-                                You Lead
-                              </Badge>
-                            ) : (
-                              <Badge className="bg-warning/10 text-warning text-xs">
-                                Behind
-                              </Badge>
-                            )}
-                          </div>
+                          <p className={`text-2xl font-bold ${item.isUserProduct ? 'text-primary' : ''}`}>
+                            {item.visibility}%
+                          </p>
                         </div>
                         <div>
                           <p className="text-xs text-muted-foreground">Total Mentions</p>
-                          <p className="text-2xl font-bold">{competitor.mentions}</p>
+                          <p className="text-2xl font-bold">
+                            {item.mentions}
+                          </p>
                         </div>
                         <div>
                           <p className="text-xs text-muted-foreground">Citations</p>
-                          <p className="text-2xl font-bold">{competitor.citations}</p>
+                          <p className="text-2xl font-bold">
+                            {item.citations}
+                          </p>
                         </div>
                         <div>
-                          <p className="text-xs text-muted-foreground">Gap</p>
-                          <p className={`text-2xl font-bold ${
-                            (profile?.analysisResult?.overallScore || 0) - competitor.visibility > 0 
-                              ? 'text-success' 
-                              : 'text-warning'
-                          }`}>
-                            {(profile?.analysisResult?.overallScore || 0) - competitor.visibility > 0 ? '+' : ''}
-                            {(profile?.analysisResult?.overallScore || 0) - competitor.visibility}%
+                          <p className="text-xs text-muted-foreground">
+                            {item.isUserProduct ? 'Status' : 'Gap'}
                           </p>
+                          {item.isUserProduct ? (
+                            <p className="text-2xl font-bold text-primary">
+                              {item.rank === 1 ? '👑 Leader' : `#${item.rank}`}
+                            </p>
+                          ) : (
+                            <p className={`text-2xl font-bold ${
+                              (profile?.analysisResult?.overallScore || 0) - item.visibility > 0 
+                                ? 'text-success' 
+                                : 'text-warning'
+                            }`}>
+                              {(profile?.analysisResult?.overallScore || 0) - item.visibility > 0 ? '+' : ''}
+                              {(profile?.analysisResult?.overallScore || 0) - item.visibility}%
+                            </p>
+                          )}
                         </div>
                       </div>
                     </div>
@@ -1531,23 +1528,37 @@ export default function ProfileAnalysis() {
                 <div>
                   <p className="font-semibold mb-2">Your Position:</p>
                   <ul className="space-y-1 text-muted-foreground">
-                    <li>• Ranked #1 with {profile?.analysisResult?.overallScore}% visibility</li>
-                    <li>• {profile?.analysisResult?.mentions} total mentions across all LLMs</li>
-                    <li>• {profile?.analysisResult?.citations} citation sources</li>
-                    <li>• Leading {profile?.competitors.filter(c => c.visibility < (profile?.analysisResult?.overallScore || 0)).length} out of {profile?.competitors.length} competitors</li>
+                    {(() => {
+                      const userProduct = profile?.analysisResult?.competitorAnalysis?.find(c => c.isUserProduct);
+                      return userProduct ? (
+                        <>
+                          <li>• Ranked #{userProduct.rank} with {userProduct.visibility}% visibility</li>
+                          <li>• {userProduct.mentions} total mentions across all LLMs</li>
+                          <li>• {userProduct.citations} citation sources</li>
+                        </>
+                      ) : (
+                        <li>• No ranking data available</li>
+                      );
+                    })()}
                   </ul>
                 </div>
                 <div>
                   <p className="font-semibold mb-2">Key Opportunities:</p>
                   <ul className="space-y-1 text-muted-foreground">
-                    {profile?.competitors.slice(0, 3).map((comp, idx) => (
-                      <li key={comp.id}>
-                        • {comp.visibility > (profile?.analysisResult?.overallScore || 0) 
-                          ? `Close the ${comp.visibility - (profile?.analysisResult?.overallScore || 0)}% gap with ${comp.name}`
-                          : `Maintain ${(profile?.analysisResult?.overallScore || 0) - comp.visibility}% lead over ${comp.name}`
-                        }
-                      </li>
-                    ))}
+                    {profile?.analysisResult?.competitorAnalysis
+                      ?.filter(c => !c.isUserProduct)
+                      .slice(0, 3)
+                      .map((comp, idx) => {
+                        const userProduct = profile?.analysisResult?.competitorAnalysis?.find(c => c.isUserProduct);
+                        return (
+                          <li key={comp.id || idx}>
+                            • {comp.visibility > (userProduct?.visibility || 0) 
+                              ? `Close the ${comp.visibility - (userProduct?.visibility || 0)}% gap with ${comp.name}`
+                              : `Maintain ${(userProduct?.visibility || 0) - comp.visibility}% lead over ${comp.name}`
+                            }
+                          </li>
+                        );
+                      })}
                   </ul>
                 </div>
               </div>
@@ -1572,6 +1583,24 @@ export default function ProfileAnalysis() {
                 Close
               </Button>
             </div>
+            </>
+            ) : (
+              /* Fallback: Show message when no data */
+              <Card className="p-6 text-center">
+                <p className="text-muted-foreground mb-4">
+                  No competitor analysis data available yet.
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  Please run or re-run the analysis to generate competitor comparison data.
+                </p>
+                <Button
+                  onClick={() => setShowCompetitorModal(false)}
+                  className="mt-4"
+                >
+                  Close
+                </Button>
+              </Card>
+            )}
           </div>
         </DialogContent>
       </Dialog>
