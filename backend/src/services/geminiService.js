@@ -18,15 +18,10 @@ async function generateProducts(websiteUrl) {
     // Use the generateProductsList prompt template
     const model = getModel("gemini-2.5-flash");
     const prompt = generateProductsList(normalizedUrl);
-    // `\n\nWebsite Content for Analysis:\n${websiteContent}`;
-
-    console.log("Prompt:", prompt);
-    // console.log("Generating products for URL:", normalizedUrl);
+    
     const result = await model.generateContent(prompt);
     const response = result.response;
     const text = response.text();
-
-    console.log("Gemini AI Response:", text);
 
     // Extract JSON from response
     let products = [];
@@ -114,12 +109,9 @@ async function generateQuestionsAndCompetitors(productName, category, region, we
     // Use the comprehensive prompt template
     const prompt = generateQCPrompt(productName, category, region, websiteUrl);
 
-    console.log("Generating questions and competitors for:", productName, category, region);
     const result = await model.generateContent(prompt);
     const response = result.response;
     const text = response.text();
-
-    console.log("Gemini AI Response:", text);
 
     let questions = [];
     let competitors = [];
@@ -139,8 +131,6 @@ async function generateQuestionsAndCompetitors(productName, category, region, we
         
         const parsedData = JSON.parse(jsonText);
 
-        console.log("Successfully parsed JSON:", JSON.stringify(parsedData, null, 2));
-
         // Extract questions
         if (parsedData.questions && Array.isArray(parsedData.questions)) {
           questions = parsedData.questions.map((q, index) => ({
@@ -152,7 +142,6 @@ async function generateQuestionsAndCompetitors(productName, category, region, we
             visibility: 0,
             addedBy: "auto",
           }));
-          console.log(`✅ Extracted ${questions.length} questions from AI response`);
         } else {
           console.warn("⚠️ No questions array found in parsed data");
         }
@@ -169,7 +158,6 @@ async function generateQuestionsAndCompetitors(productName, category, region, we
             citations: 0,
             rank: index + 1,
           }));
-          console.log(`✅ Extracted ${competitors.length} competitors from AI response`);
         } else {
           console.warn("⚠️ No competitors array found in parsed data");
         }

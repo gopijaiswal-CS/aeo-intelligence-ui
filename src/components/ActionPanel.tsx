@@ -272,7 +272,6 @@ website: ${profile.websiteUrl}
       const response = await api.getOptimizationRecommendations(profile.id);
       
       if (response.success && response.data) {
-        console.log("Optimization API response:", response.data);
         setOptimizationData(response.data.recommendations); // Fix: Use recommendations array
         toast.dismiss();
         setShowOptimizeModal(true);

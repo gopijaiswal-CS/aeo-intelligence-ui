@@ -18,8 +18,6 @@ serve(async (req) => {
       throw new Error("LOVABLE_API_KEY is not configured");
     }
 
-    console.log("Analyzing product:", productData.name);
-
     const systemPrompt = `You are an expert AEO (Answer Engine Optimization) and SEO consultant specializing in improving AI visibility and citation weight. Analyze the provided product data and generate specific, actionable recommendations to improve:
 
 1. AI Visibility Score (current presence in AI model responses)
@@ -126,7 +124,6 @@ Generate 5-8 specific recommendations with:
     }
 
     const data = await response.json();
-    console.log("AI response received successfully");
 
     const toolCall = data.choices?.[0]?.message?.tool_calls?.[0];
     if (!toolCall) {

@@ -241,14 +241,10 @@ export const ProfileProvider = ({ children }: { children: ReactNode }) => {
       // Update status to analyzing
       updateProfile(profileId, { status: "analyzing" });
 
-      console.log(`🚀 Running analysis for profile: ${profileId}`);
-
       // Call REAL backend API
       const response = await api.runAnalysis(profileId);
 
       if (response.success && response.data) {
-        console.log('✅ Analysis completed successfully');
-        
         // Fetch updated profile from backend
         const profileResponse = await api.getProfiles();
         if (profileResponse.success && profileResponse.data) {

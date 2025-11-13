@@ -6,8 +6,6 @@ const cheerio = require('cheerio');
  */
 async function runSEOHealthCheck(websiteUrl) {
   try {
-    console.log(`\n🔍 Starting SEO Health Check for: ${websiteUrl}`);
-    
     // Normalize URL
     const normalizedUrl = websiteUrl.startsWith('http') 
       ? websiteUrl 
@@ -52,8 +50,6 @@ async function runSEOHealthCheck(websiteUrl) {
 
     // Generate action items
     const actionItems = generateActionItems(allIssues, scores);
-
-    console.log(`✅ SEO Health Check Complete - Overall Score: ${overallScore}/100\n`);
 
     return {
       overallScore,

@@ -9,25 +9,18 @@ const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
  */
 async function generateEnhancedLLMText(profile) {
   try {
-    console.log(`\n🤖 Generating Enhanced LLM.txt for: ${profile.productName}`);
-    
     const websiteUrl = profile.websiteUrl.startsWith('http') 
       ? profile.websiteUrl 
       : `https://${profile.websiteUrl}`;
 
     // Step 1: Crawl website content
-    console.log('📡 Crawling website content...');
     const websiteContent = await crawlWebsiteContent(websiteUrl);
     
     // Step 2: Generate AI-powered summary
-    console.log('🧠 Generating AI summary with Gemini...');
     const aiSummary = await generateAISummary(profile, websiteContent);
     
     // Step 3: Build comprehensive llm.txt
-    console.log('📝 Building llm.txt content...');
     const llmTextContent = buildLLMTextContent(profile, websiteContent, aiSummary);
-    
-    console.log('✅ Enhanced LLM.txt generated successfully!\n');
     
     return llmTextContent;
   } catch (error) {

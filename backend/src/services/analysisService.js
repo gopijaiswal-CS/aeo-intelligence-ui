@@ -163,12 +163,8 @@ ${generalSources.join(', ')}
 - **Citation sources MUST be from the provided list above**
 </important>`;
 
-    console.log(`[${llmName}] Querying with ${questions.length} questions...`);
-
-          const result = await model.generateContent(prompt);
-          const responseText = result.response.text();
-          
-    console.log(`[${llmName}] Response received, parsing...`);
+    const result = await model.generateContent(prompt);
+    const responseText = result.response.text();
     
     // Parse JSON response
     let parsedResponse;
@@ -247,7 +243,6 @@ ${generalSources.join(', ')}
       // If all sources were removed, add a default one
       if (cleanedSources.length === 0 && validSources.length > 0) {
         cleanedSources.push(validSources[0]);
-        console.log(`[${llmName}] ℹ️ Added default source: ${validSources[0]}`);
       }
       
       return {
@@ -255,8 +250,6 @@ ${generalSources.join(', ')}
         citationSources: cleanedSources
       };
     });
-    
-    console.log(`[${llmName}] Successfully parsed ${parsedResponse.answers.length} answers`);
     
     return parsedResponse.answers;
   } catch (error) {
@@ -276,11 +269,6 @@ ${generalSources.join(', ')}
  * Analyze LLM responses to calculate metrics
  */
 function analyzeLLMResponses(llmName, answers, productName, competitors) {
-  console.log(`\n🔍 Analyzing ${llmName} responses...`);
-  console.log(`  Answers: ${answers?.length || 0}`);
-  console.log(`  Product: ${productName}`);
-  console.log(`  Competitors: ${competitors?.length || 0}`);
-  
   let productMentions = 0;
   let totalMentions = 0;
   const competitorMentions = {};
@@ -328,9 +316,6 @@ function analyzeLLMResponses(llmName, answers, productName, competitors) {
   const visibilityScore = answers.length > 0 
     ? Math.round((productMentions / answers.length) * 100)
     : 0;
-  
-  // Log the calculation for debugging
-  console.log(`[${llmName}] Score Calculation: ${productMentions} mentions out of ${answers.length} questions = ${visibilityScore}%`);
   
   // Generate top sources with calculated data
   const topSources = Array.from(citationSources).slice(0, 5).map((url, idx) => {
@@ -384,34 +369,14 @@ async function runAEOAnalysis(profile) {
   try {
     const { questions, competitors, productName, category, _id } = profile;
     
-    console.log(`\n========================================`);
-    console.log(`Starting AEO Analysis for: ${productName}`);
-    console.log(`Questions: ${questions.length}`);
-    console.log(`Competitors: ${competitors.length}`);
-    console.log(`========================================\n`);
-    
     // LLM platforms to test
     const llms = ['ChatGPT', 'Claude', 'Gemini', 'Perplexity'];
-    
-    // Query Gemini with REAL API, others are simulated
-    console.log('Querying LLMs...\n');
-    console.log('🔥 Gemini: REAL API');
-    console.log('🤖 ChatGPT, Claude, Perplexity: Simulated (mock data)\n');
     
     const llmPromises = llms.map(llmName => 
       queryLLMBatch(llmName, questions, productName, category, competitors)
     );
     
     const allLLMResponses = await Promise.all(llmPromises);
-    
-    console.log('\n✅ All LLM queries complete!\n');
-    
-    // Debug: Check if we got responses
-    console.log('Response counts:');
-    llms.forEach((llm, idx) => {
-      console.log(`  ${llm}: ${allLLMResponses[idx]?.length || 0} answers`);
-    });
-    console.log('');
     
     // Store responses with questions
     const questionsWithResponses = questions.map((question, idx) => ({
@@ -425,8 +390,6 @@ async function runAEOAnalysis(profile) {
     }));
     
     // Analyze responses for each LLM
-    console.log('Analyzing LLM responses...\n');
-    
     const llmPerformance = llms.map((llmName, idx) => {
       const analysis = analyzeLLMResponses(
         llmName,
@@ -435,12 +398,8 @@ async function runAEOAnalysis(profile) {
         competitors
       );
       
-      console.log(`[${llmName}] Score: ${analysis.score}%, Mentions: ${analysis.mentions}/${questions.length}, Citations: ${analysis.citations}, Top Sources: ${analysis.topSources.length}`);
-      
       return analysis;
     });
-    
-    console.log(`\nTotal LLM Performance entries: ${llmPerformance.length}\n`);
     
     // Calculate overall metrics
     const overallScore = Math.round(
@@ -510,13 +469,6 @@ async function runAEOAnalysis(profile) {
     // Mock SEO health
     const seoHealth = Math.round(Math.random() * 15 + 80);
     const brokenLinks = Math.floor(Math.random() * 5);
-    
-    console.log(`\n========================================`);
-    console.log(`Analysis Complete!`);
-    console.log(`Overall Score: ${overallScore}%`);
-    console.log(`Total Mentions: ${totalMentions}`);
-    console.log(`Total Citations: ${totalCitations}`);
-    console.log(`========================================\n`);
     
     return {
       overallScore,

@@ -58,7 +58,6 @@ const Index = () => {
     try {
       const response = await generateProducts(url);
 
-      console.log(response);
       if (response.success && response.data) {
         setGeneratedProducts(response.data.products);
         toast.success(

@@ -293,7 +293,6 @@ export default function CreateProfile() {
 
     // TODO: Replace with actual API call
     const response = await generateProducts(websiteUrl);
-    console.log(response);
     setGeneratedProducts(response.data.products);
     toast.success("Products generated successfully!");
     setIsGenerating(false);

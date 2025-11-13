@@ -1,7 +1,9 @@
-const Profile = require('../models/Profile');
-const { generateQuestionsAndCompetitors } = require('../services/geminiService');
-const { runAEOAnalysis } = require('../services/analysisService');
-const NotificationService = require('../services/notificationService');
+const Profile = require("../models/Profile");
+const {
+  generateQuestionsAndCompetitors,
+} = require("../services/geminiService");
+const { runAEOAnalysis } = require("../services/analysisService");
+const NotificationService = require("../services/notificationService");
 
 /**
  * Create a new profile
@@ -16,9 +18,10 @@ exports.createProfile = async (req, res) => {
       return res.status(400).json({
         success: false,
         error: {
-          code: 'VALIDATION_ERROR',
-          message: 'Missing required fields: websiteUrl, productName, category, region'
-        }
+          code: "VALIDATION_ERROR",
+          message:
+            "Missing required fields: websiteUrl, productName, category, region",
+        },
       });
     }
 
@@ -29,7 +32,7 @@ exports.createProfile = async (req, res) => {
       productName,
       category,
       region,
-      status: 'draft'
+      status: "draft",
     });
 
     // Create notification
@@ -37,16 +40,16 @@ exports.createProfile = async (req, res) => {
 
     res.status(201).json({
       success: true,
-      data: profile
+      data: profile,
     });
   } catch (error) {
-    console.error('Error creating profile:', error);
+    console.error("Error creating profile:", error);
     res.status(500).json({
       success: false,
       error: {
-        code: 'SERVER_ERROR',
-        message: error.message
-      }
+        code: "SERVER_ERROR",
+        message: error.message,
+      },
     });
   }
 };
@@ -58,22 +61,22 @@ exports.createProfile = async (req, res) => {
 exports.getProfiles = async (req, res) => {
   try {
     const profiles = await Profile.find().sort({ createdAt: -1 });
-    
+
     res.json({
       success: true,
       data: {
         profiles,
-        total: profiles.length
-      }
+        total: profiles.length,
+      },
     });
   } catch (error) {
-    console.error('Error fetching profiles:', error);
+    console.error("Error fetching profiles:", error);
     res.status(500).json({
       success: false,
       error: {
-        code: 'SERVER_ERROR',
-        message: error.message
-      }
+        code: "SERVER_ERROR",
+        message: error.message,
+      },
     });
   }
 };
@@ -85,29 +88,29 @@ exports.getProfiles = async (req, res) => {
 exports.getProfileById = async (req, res) => {
   try {
     const profile = await Profile.findById(req.params.id);
-    
+
     if (!profile) {
       return res.status(404).json({
         success: false,
         error: {
-          code: 'NOT_FOUND',
-          message: 'Profile not found'
-        }
+          code: "NOT_FOUND",
+          message: "Profile not found",
+        },
       });
     }
 
     res.json({
       success: true,
-      data: profile
+      data: profile,
     });
   } catch (error) {
-    console.error('Error fetching profile:', error);
+    console.error("Error fetching profile:", error);
     res.status(500).json({
       success: false,
       error: {
-        code: 'SERVER_ERROR',
-        message: error.message
-      }
+        code: "SERVER_ERROR",
+        message: error.message,
+      },
     });
   }
 };
@@ -118,34 +121,33 @@ exports.getProfileById = async (req, res) => {
  */
 exports.updateProfile = async (req, res) => {
   try {
-    const profile = await Profile.findByIdAndUpdate(
-      req.params.id,
-      req.body,
-      { new: true, runValidators: true }
-    );
+    const profile = await Profile.findByIdAndUpdate(req.params.id, req.body, {
+      new: true,
+      runValidators: true,
+    });
 
     if (!profile) {
       return res.status(404).json({
         success: false,
         error: {
-          code: 'NOT_FOUND',
-          message: 'Profile not found'
-        }
+          code: "NOT_FOUND",
+          message: "Profile not found",
+        },
       });
     }
 
     res.json({
       success: true,
-      data: profile
+      data: profile,
     });
   } catch (error) {
-    console.error('Error updating profile:', error);
+    console.error("Error updating profile:", error);
     res.status(500).json({
       success: false,
       error: {
-        code: 'SERVER_ERROR',
-        message: error.message
-      }
+        code: "SERVER_ERROR",
+        message: error.message,
+      },
     });
   }
 };
@@ -162,24 +164,24 @@ exports.deleteProfile = async (req, res) => {
       return res.status(404).json({
         success: false,
         error: {
-          code: 'NOT_FOUND',
-          message: 'Profile not found'
-        }
+          code: "NOT_FOUND",
+          message: "Profile not found",
+        },
       });
     }
 
     res.json({
       success: true,
-      data: { message: 'Profile deleted successfully' }
+      data: { message: "Profile deleted successfully" },
     });
   } catch (error) {
-    console.error('Error deleting profile:', error);
+    console.error("Error deleting profile:", error);
     res.status(500).json({
       success: false,
       error: {
-        code: 'SERVER_ERROR',
-        message: error.message
-      }
+        code: "SERVER_ERROR",
+        message: error.message,
+      },
     });
   }
 };
@@ -196,14 +198,14 @@ exports.generateQuestionsAndCompetitors = async (req, res) => {
       return res.status(404).json({
         success: false,
         error: {
-          code: 'NOT_FOUND',
-          message: 'Profile not found'
-        }
+          code: "NOT_FOUND",
+          message: "Profile not found",
+        },
       });
     }
 
     // Update status
-    profile.status = 'generating';
+    profile.status = "generating";
     await profile.save();
 
     // Generate using Gemini AI
@@ -217,7 +219,7 @@ exports.generateQuestionsAndCompetitors = async (req, res) => {
     // Update profile with generated data
     profile.questions = questions;
     profile.competitors = competitors;
-    profile.status = 'ready';
+    profile.status = "ready";
     await profile.save();
 
     // Create notification
@@ -231,25 +233,25 @@ exports.generateQuestionsAndCompetitors = async (req, res) => {
       success: true,
       data: {
         questions,
-        competitors
-      }
+        competitors,
+      },
     });
   } catch (error) {
-    console.error('Error generating questions and competitors:', error);
-    
+    console.error("Error generating questions and competitors:", error);
+
     // Reset status on error
     try {
-      await Profile.findByIdAndUpdate(req.params.id, { status: 'draft' });
+      await Profile.findByIdAndUpdate(req.params.id, { status: "draft" });
     } catch (updateError) {
-      console.error('Error resetting status:', updateError);
+      console.error("Error resetting status:", updateError);
     }
 
     res.status(500).json({
       success: false,
       error: {
-        code: 'GENERATION_ERROR',
-        message: error.message
-      }
+        code: "GENERATION_ERROR",
+        message: error.message,
+      },
     });
   }
 };
@@ -266,9 +268,9 @@ exports.runAnalysis = async (req, res) => {
       return res.status(404).json({
         success: false,
         error: {
-          code: 'NOT_FOUND',
-          message: 'Profile not found'
-        }
+          code: "NOT_FOUND",
+          message: "Profile not found",
+        },
       });
     }
 
@@ -276,73 +278,38 @@ exports.runAnalysis = async (req, res) => {
       return res.status(400).json({
         success: false,
         error: {
-          code: 'INVALID_STATE',
-          message: 'Profile must have questions and competitors before running analysis'
-        }
+          code: "INVALID_STATE",
+          message:
+            "Profile must have questions and competitors before running analysis",
+        },
       });
     }
 
     // Update status
-    profile.status = 'analyzing';
+    profile.status = "analyzing";
     await profile.save();
 
     // Run analysis
     const analysisResult = await runAEOAnalysis(profile);
-    
-    console.log('\n📊 Analysis Result Summary:');
-    console.log(`- llmPerformance length: ${analysisResult.llmPerformance?.length || 0}`);
-    console.log(`- competitorAnalysis length: ${analysisResult.competitorAnalysis?.length || 0}`);
-    console.log(`- citationSources length: ${analysisResult.citationSources?.length || 0}`);
-    
-    if (analysisResult.llmPerformance && analysisResult.llmPerformance.length > 0) {
-      console.log('\n✅ LLM Performance Data:');
-      analysisResult.llmPerformance.forEach(llm => {
-        console.log(`  ${llm.llmName}: ${llm.score}% (${llm.mentions} mentions, ${llm.citations} citations)`);
-      });
-    } else {
-      console.log('\n❌ WARNING: llmPerformance is empty!');
-    }
-    
-    if (analysisResult.competitorAnalysis && analysisResult.competitorAnalysis.length > 0) {
-      console.log('\n✅ Competitor Analysis Data:');
-      analysisResult.competitorAnalysis.forEach(comp => {
-        console.log(`  ${comp.name}: Rank #${comp.rank}, Visibility ${comp.visibility}%, ${comp.mentions} mentions${comp.isUserProduct ? ' (Your Product)' : ''}`);
-      });
-    } else {
-      console.log('\n❌ WARNING: competitorAnalysis is empty!');
-    }
 
     // Update profile with results
     profile.analysisResult = analysisResult;
-    
+
     // Store LLM responses with questions
     if (analysisResult.questionsWithResponses) {
       profile.questions = analysisResult.questionsWithResponses;
     }
-    
+
     // Update competitor data (exclude user's product)
     if (analysisResult.competitorAnalysis) {
       // Filter out user's product from competitor list
-      profile.competitors = analysisResult.competitorAnalysis.filter(item => !item.isUserProduct);
+      profile.competitors = analysisResult.competitorAnalysis.filter(
+        (item) => !item.isUserProduct
+      );
     }
-    
-    profile.status = 'completed';
+
+    profile.status = "completed";
     await profile.save();
-    
-    // Verify data was saved correctly
-    console.log('\n✅ Profile saved successfully!');
-    console.log(`- Profile ID: ${profile._id}`);
-    console.log(`- analysisResult.competitorAnalysis length after save: ${profile.analysisResult?.competitorAnalysis?.length || 0}`);
-    console.log(`- profile.competitors length (should exclude user product): ${profile.competitors?.length || 0}`);
-    console.log(`- analysisResult.llmPerformance length after save: ${profile.analysisResult?.llmPerformance?.length || 0}`);
-    
-    // Log competitor names to verify no duplicates
-    if (profile.competitors && profile.competitors.length > 0) {
-      console.log('\n📋 Competitors saved:');
-      profile.competitors.forEach((comp, idx) => {
-        console.log(`  ${idx + 1}. ${comp.name} (Rank #${comp.rank})`);
-      });
-    }
 
     // Create notification
     await NotificationService.notifyAnalysisComplete(
@@ -352,27 +319,26 @@ exports.runAnalysis = async (req, res) => {
 
     res.json({
       success: true,
-      data: profile
+      data: profile,
     });
   } catch (error) {
-    console.error('Error running analysis:', error);
-    
+    console.error("Error running analysis:", error);
+
     // Reset status on error
     try {
-      await Profile.findByIdAndUpdate(req.params.id, { status: 'ready' });
+      await Profile.findByIdAndUpdate(req.params.id, { status: "ready" });
     } catch (updateError) {
-      console.error('Error resetting status:', updateError);
+      console.error("Error resetting status:", updateError);
     }
 
     res.status(500).json({
       success: false,
       error: {
-        code: 'ANALYSIS_ERROR',
-        message: error.message
-      }
+        code: "ANALYSIS_ERROR",
+        message: error.message,
+      },
     });
   }
 };
 
 module.exports = exports;
-
