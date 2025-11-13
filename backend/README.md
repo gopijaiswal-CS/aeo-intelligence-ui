@@ -5,28 +5,31 @@ Backend API for the AEO Intelligence Platform - Answer Engine Optimization analy
 ## Features
 
 - ✅ Profile Management (CRUD operations)
-- ✅ Product Generation from Website URL using Gemini AI
-- ✅ Questions & Competitors Generation using Gemini AI
+- ✅ **Multi-LLM Support** - OpenAI (Default) & Google Gemini
+- ✅ Product Generation from Website URL using AI
+- ✅ Questions & Competitors Generation using AI
 - ✅ AEO Analysis Engine with LLM testing
 - ✅ Content Optimization Recommendations
 - ✅ SEO Health Check
 - ✅ MongoDB integration
 - ✅ RESTful API design
 - ✅ Error handling and validation
+- ✅ Dynamic LLM provider switching
 
 ## Tech Stack
 
 - **Runtime**: Node.js
 - **Framework**: Express.js
 - **Database**: MongoDB
-- **AI/LLM**: Google Gemini AI
+- **AI/LLM**: OpenAI (Default), Google Gemini AI
 - **Web Scraping**: Axios + Cheerio
 
 ## Prerequisites
 
 - Node.js (v16 or higher)
 - MongoDB (v4.4 or higher)
-- Gemini API Key
+- OpenAI API Key (Recommended - Default)
+- Gemini API Key (Optional - Alternative)
 
 ## Installation
 
@@ -50,8 +53,13 @@ cp .env.example .env
 PORT=3000
 NODE_ENV=development
 MONGODB_URI=mongodb://localhost:27017/aeo-intelligence
-GEMINI_API_KEY=your_gemini_api_key_here
+
+# AI Model API Keys
+OPENAI_API_KEY=your_openai_api_key_here       # Primary (Default)
+GEMINI_API_KEY=your_gemini_api_key_here       # Alternative (Optional)
+
 CORS_ORIGIN=http://localhost:5173
+DEFAULT_AI_PROVIDER=openai                     # openai or gemini
 ```
 
 ## Running the Server
@@ -163,6 +171,34 @@ Content-Type: application/json
 }
 ```
 
+### LLM Management
+
+#### Get Available LLM Providers
+```
+GET /api/v1/llm/providers
+```
+
+#### Get Models for Specific Provider
+```
+GET /api/v1/llm/providers/:provider/models
+```
+
+#### Test LLM Connection
+```
+POST /api/v1/llm/test
+Content-Type: application/json
+
+{
+  "provider": "openai",
+  "model": "gpt-4o-mini"
+}
+```
+
+#### Get Current LLM Configuration
+```
+GET /api/v1/llm/config
+```
+
 ## API Response Format
 
 ### Success Response
@@ -203,12 +239,14 @@ backend/
 ├── src/
 │   ├── config/          # Configuration files
 │   │   ├── database.js  # MongoDB connection
-│   │   └── gemini.js    # Gemini AI setup
+│   │   ├── gemini.js    # Gemini AI setup (Legacy)
+│   │   └── llm.js       # Unified LLM config (OpenAI + Gemini)
 │   ├── controllers/     # Request handlers
 │   │   ├── profileController.js
 │   │   ├── productController.js
 │   │   ├── optimizationController.js
-│   │   └── seoController.js
+│   │   ├── seoController.js
+│   │   └── llmController.js
 │   ├── models/          # Database models
 │   │   └── Profile.js
 │   ├── routes/          # API routes
@@ -216,7 +254,8 @@ backend/
 │   │   ├── profileRoutes.js
 │   │   ├── productRoutes.js
 │   │   ├── optimizationRoutes.js
-│   │   └── seoRoutes.js
+│   │   ├── seoRoutes.js
+│   │   └── llmRoutes.js
 │   ├── services/        # Business logic
 │   │   ├── geminiService.js
 │   │   └── analysisService.js
@@ -237,7 +276,9 @@ backend/
 | `PORT` | Server port | 3000 |
 | `NODE_ENV` | Environment | development |
 | `MONGODB_URI` | MongoDB connection string | mongodb://localhost:27017/aeo-intelligence |
-| `GEMINI_API_KEY` | Google Gemini API key | - |
+| `OPENAI_API_KEY` | OpenAI API key (Primary) | - |
+| `GEMINI_API_KEY` | Google Gemini API key (Optional) | - |
+| `DEFAULT_AI_PROVIDER` | Default AI provider | openai |
 | `CORS_ORIGIN` | Allowed CORS origin | http://localhost:5173 |
 
 ## MongoDB Setup
@@ -260,10 +301,45 @@ mongosh
 3. Get connection string
 4. Update `MONGODB_URI` in `.env`
 
-## Gemini API Setup
+## AI Provider Setup
+
+### OpenAI (Default & Recommended)
+
+1. Get API key from https://platform.openai.com/api-keys
+2. Add to `.env` file as `OPENAI_API_KEY`
+
+**Supported Models:**
+- `gpt-4o` - Most capable GPT-4 model
+- `gpt-4o-mini` - Fast and efficient (Default)
+- `gpt-4-turbo` - Previous generation GPT-4
+- `gpt-3.5-turbo` - Faster, cost-effective
+
+### Google Gemini (Alternative)
 
 1. Get API key from https://makersuite.google.com/app/apikey
 2. Add to `.env` file as `GEMINI_API_KEY`
+
+**Supported Models:**
+- `gemini-2.5-flash` - Latest Gemini model
+- `gemini-2.0-flash` - Fast generation (Default for Gemini)
+- `gemini-pro` - Balanced performance
+
+### Switching Between Providers
+
+The system uses OpenAI by default. To switch:
+
+1. **Via Environment Variable**: Set `DEFAULT_AI_PROVIDER=gemini` in `.env`
+2. **Via API**: Use the LLM management endpoints to test and switch providers
+3. **Programmatically**: Pass provider option in service calls
+
+```javascript
+// Example: Using a specific provider
+await generateContent(prompt, {
+  provider: 'gemini',  // or 'openai'
+  model: 'gemini-pro',
+  temperature: 0.7
+});
+```
 
 ## Development
 
@@ -300,10 +376,25 @@ curl -X POST http://localhost:3000/api/v1/profiles \
 - Check connection string in `.env`
 - Verify network access if using MongoDB Atlas
 
-### Gemini API Issues:
+### AI/LLM API Issues:
+
+**OpenAI:**
+- Verify API key is valid at https://platform.openai.com/api-keys
+- Check billing and usage limits
+- Review error messages in logs
+- Ensure you have sufficient credits
+
+**Gemini:**
 - Verify API key is valid
 - Check API quota/limits
 - Review error messages in logs
+
+**Connection Testing:**
+```bash
+curl -X POST http://localhost:3000/api/v1/llm/test \
+  -H "Content-Type: application/json" \
+  -d '{"provider":"openai","model":"gpt-4o-mini"}'
+```
 
 ### CORS Issues:
 - Update `CORS_ORIGIN` in `.env`

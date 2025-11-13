@@ -1,8 +1,82 @@
-const { getModel } = require("../config/gemini");
+const {
+  generateContent,
+  generateJSONContent,
+  getDefaultProvider,
+} = require("../config/llm");
 const axios = require("axios");
 const cheerio = require("cheerio");
 const { generateProductsList } = require("../prompts/generateProductsList");
-const { generateQuestionsAndCompetitors: generateQCPrompt } = require("../prompts/generateQuestionsAndCompetitors");
+const {
+  generateQuestionsAndCompetitors: generateQCPrompt,
+} = require("../prompts/generateQuestionsAndCompetitors");
+
+/**
+ * Safely extract and parse JSON from LLM response
+ * Handles markdown code blocks, XML tags, and raw JSON
+ */
+function extractJSON(text) {
+  if (!text || typeof text !== "string") {
+    throw new Error("Invalid input: text must be a non-empty string");
+  }
+
+  // Try different extraction patterns
+  const patterns = [
+    // Markdown code blocks with json language tag
+    /```json\s*(\{[\s\S]*?\}|\[[\s\S]*?\])\s*```/,
+    // Markdown code blocks without language tag
+    /```\s*(\{[\s\S]*?\}|\[[\s\S]*?\])\s*```/,
+    // XML-style tags
+    /<json>\s*(\{[\s\S]*?\}|\[[\s\S]*?\])\s*<\/json>/,
+    // Raw JSON object with specific keys
+    /\{[\s\S]*?"(?:products|questions|competitors)"[\s\S]*?\}/,
+    // Raw JSON array
+    /\[[\s\S]*?\]/,
+    // Raw JSON object (fallback)
+    /\{[\s\S]*?\}/,
+  ];
+
+  let jsonText = null;
+
+  // Try each pattern
+  for (const pattern of patterns) {
+    const match = text.match(pattern);
+    if (match) {
+      jsonText = match[1] || match[0];
+      break;
+    }
+  }
+
+  // If no pattern matched, try to use the entire text
+  if (!jsonText) {
+    jsonText = text.trim();
+  }
+
+  // Clean up the extracted text
+  jsonText = jsonText
+    .replace(/```json|```/g, "") // Remove markdown
+    .replace(/<\/?json>/g, "") // Remove XML tags
+    .trim();
+
+  // Validate that it looks like JSON
+  if (!jsonText.startsWith("{") && !jsonText.startsWith("[")) {
+    throw new Error(
+      "Extracted text does not appear to be valid JSON (must start with { or [)"
+    );
+  }
+
+  // Attempt to parse
+  try {
+    const parsed = JSON.parse(jsonText);
+    return parsed;
+  } catch (error) {
+    // Provide more context in the error
+    const preview =
+      jsonText.length > 200 ? jsonText.substring(0, 200) + "..." : jsonText;
+    throw new Error(
+      `Failed to parse JSON: ${error.message}\nExtracted text preview: ${preview}`
+    );
+  }
+}
 
 /**
  * Generate products from a website URL using Gemini AI
@@ -16,74 +90,69 @@ async function generateProducts(websiteUrl) {
         : `https://${websiteUrl}`;
 
     // Use the generateProductsList prompt template
-    const model = getModel("gemini-2.5-flash");
     const prompt = generateProductsList(normalizedUrl);
-    
-    const result = await model.generateContent(prompt);
-    const response = result.response;
-    const text = response.text();
+
+    // Use unified LLM service (defaults to OpenAI)
+    const text = await generateContent(prompt, {
+      temperature: 0.7,
+      maxTokens: 2000,
+      provider: "openai",
+      model: "gpt-4o",
+    });
 
     // Extract JSON from response
     let products = [];
     try {
-      // Try to find JSON in the response (handle markdown code blocks, XML tags, or raw JSON)
-      const jsonMatch =
-        text.match(/```json\s*(\{[\s\S]*?\})\s*```/) ||           // Markdown: ```json {...} ```
-        text.match(/```\s*(\{[\s\S]*?\})\s*```/) ||               // Markdown: ``` {...} ```
-        text.match(/<json>\s*(\{[\s\S]*?\})\s*<\/json>/) ||       // XML: <json>{...}</json>
-        text.match(/\{[\s\S]*?"products"[\s\S]*?\}/) ||           // Raw JSON with "products"
-        text.match(/\[[\s\S]*?\]/);                                // Raw array
+      console.log("Raw LLM response for products:", text.substring(0, 500));
 
-      if (jsonMatch) {
-        let jsonText = jsonMatch[1] || jsonMatch[0];
-        // Clean up any remaining markdown or whitespace
-        jsonText = jsonText.replace(/```json|```/g, '').trim();
-        const parsedData = JSON.parse(jsonText);
+      // Use safe JSON extraction
+      const parsedData = extractJSON(text);
+      console.log("Successfully parsed products data:", parsedData);
 
-        // Handle both formats: {"products": [...]} and [...]
-        const productsList = parsedData.products || parsedData;
+      // Handle both formats: {"products": [...]} and [...]
+      const productsList = parsedData.products || parsedData;
 
-        // Convert to our format
-        products = productsList.map((product, index) => ({
+      if (!Array.isArray(productsList)) {
+        throw new Error(
+          "Parsed data is not an array and does not contain a 'products' array"
+        );
+      }
+
+      // Convert to our format
+      products = productsList.map((product, index) => ({
+        id: index + 1,
+        name: typeof product === "string" ? product : product.name || product,
+        category: product.category || "General",
+        description: product.description || `${product} product or service`,
+      }));
+
+      console.log(`Successfully extracted ${products.length} products`);
+    } catch (parseError) {
+      console.error("❌ JSON parsing error:", parseError.message);
+      console.error("Raw response (first 500 chars):", text.substring(0, 500));
+
+      // Fallback: try to extract product names from text
+      const productNames = text.match(/"([^"]+)"/g);
+      if (productNames && productNames.length > 0) {
+        console.log("Using fallback: extracted product names from text");
+        products = productNames.slice(0, 5).map((name, index) => ({
           id: index + 1,
-          name: typeof product === "string" ? product : product.name || product,
-          category: product.category || "General",
-          description: product.description || `${product} product or service`,
+          name: name.replace(/"/g, ""),
+          category: "General",
+          description: "Extracted from website analysis",
         }));
       } else {
-        // Fallback: try to extract product names from text
-        const productNames = text.match(/"([^"]+)"/g);
-        if (productNames && productNames.length > 0) {
-          products = productNames.slice(0, 5).map((name, index) => ({
-            id: index + 1,
-            name: name.replace(/"/g, ""),
+        // Last resort fallback
+        console.log("Using last resort: default product");
+        products = [
+          {
+            id: 1,
+            name: "Product Analysis",
             category: "General",
             description: "Extracted from website analysis",
-          }));
-        } else {
-          // Last resort fallback
-          products = [
-            {
-              id: 1,
-              name: "Product Analysis",
-              category: "General",
-              description: "Extracted from website analysis",
-            },
-          ];
-        }
+          },
+        ];
       }
-    } catch (parseError) {
-      console.error("JSON parsing error:", parseError);
-      console.error("Response text:", text);
-      // Return default products
-      products = [
-        {
-          id: 1,
-          name: "Main Product",
-          category: "General",
-          description: "Primary product or service",
-        },
-      ];
     }
 
     // Suggest regions
@@ -102,76 +171,77 @@ async function generateProducts(websiteUrl) {
 /**
  * Generate questions and competitors using Gemini AI
  */
-async function generateQuestionsAndCompetitors(productName, category, region, websiteUrl = '') {
+async function generateQuestionsAndCompetitors(
+  productName,
+  category,
+  region,
+  websiteUrl = ""
+) {
   try {
-    const model = getModel("gemini-2.5-flash");
-
     // Use the comprehensive prompt template
     const prompt = generateQCPrompt(productName, category, region, websiteUrl);
 
-    const result = await model.generateContent(prompt);
-    const response = result.response;
-    const text = response.text();
+    // Use unified LLM service (defaults to OpenAI)
+    const text = await generateContent(prompt, {
+      temperature: 0.7,
+      maxTokens: 2000,
+    });
 
     let questions = [];
     let competitors = [];
 
     try {
-      // Try to find JSON in the response (handle markdown code blocks first)
-      const jsonMatch = 
-        text.match(/```json\s*(\{[\s\S]*?\})\s*```/) ||                      // Markdown: ```json {...} ```
-        text.match(/```\s*(\{[\s\S]*?\})\s*```/) ||                          // Markdown: ``` {...} ```
-        text.match(/\{[\s\S]*?"questions"[\s\S]*?"competitors"[\s\S]*?\}/) || // Raw JSON with both keys
-        text.match(/\{[\s\S]*?\}/);                                           // Any JSON object
+      console.log(
+        "Raw LLM response for questions/competitors:",
+        text.substring(0, 500)
+      );
 
-      if (jsonMatch) {
-        let jsonText = jsonMatch[1] || jsonMatch[0];
-        // Clean up the JSON text (remove markdown and whitespace)
-        jsonText = jsonText.replace(/```json|```/g, '').trim();
-        
-        const parsedData = JSON.parse(jsonText);
+      // Use safe JSON extraction
+      const parsedData = extractJSON(text);
+      console.log("Successfully parsed questions/competitors data");
 
-        // Extract questions
-        if (parsedData.questions && Array.isArray(parsedData.questions)) {
-          questions = parsedData.questions.map((q, index) => ({
-            id: index + 1,
-            question: q.question,
-            category: q.category || "General",
-            region: q.region || region,
-            aiMentions: 0,
-            visibility: 0,
-            addedBy: "auto",
-          }));
-        } else {
-          console.warn("⚠️ No questions array found in parsed data");
-        }
-
-        // Extract competitors
-        if (parsedData.competitors && Array.isArray(parsedData.competitors)) {
-          competitors = parsedData.competitors.map((c, index) => ({
-            id: index + 1,
-            name: c.name,
-            category: c.category || category,
-            description: c.description || `Competitor in ${category} category`,
-            visibility: 0,
-            mentions: 0,
-            citations: 0,
-            rank: index + 1,
-          }));
-        } else {
-          console.warn("⚠️ No competitors array found in parsed data");
-        }
+      // Extract questions
+      if (parsedData.questions && Array.isArray(parsedData.questions)) {
+        questions = parsedData.questions.map((q, index) => ({
+          id: index + 1,
+          question: q.question,
+          category: q.category || "General",
+          region: q.region || region,
+          aiMentions: 0,
+          visibility: 0,
+          addedBy: "auto",
+        }));
+        console.log(`✅ Extracted ${questions.length} questions`);
       } else {
-        console.warn("⚠️ Could not find JSON in response, using fallback");
+        console.warn("⚠️ No questions array found in parsed data");
+      }
+
+      // Extract competitors
+      if (parsedData.competitors && Array.isArray(parsedData.competitors)) {
+        competitors = parsedData.competitors.map((c, index) => ({
+          id: index + 1,
+          name: c.name,
+          category: c.category || category,
+          description: c.description || `Competitor in ${category} category`,
+          visibility: 0,
+          mentions: 0,
+          citations: 0,
+          rank: index + 1,
+        }));
+        console.log(`✅ Extracted ${competitors.length} competitors`);
+      } else {
+        console.warn("⚠️ No competitors array found in parsed data");
       }
     } catch (parseError) {
-      console.error("JSON parsing error:", parseError);
-      console.error("Response text:", text);
+      console.error("❌ JSON parsing error:", parseError.message);
+      console.error("Raw response (first 500 chars):", text.substring(0, 500));
     }
 
     // Fallback if no questions generated
     if (questions.length === 0) {
-      console.warn("⚠️ Using fallback questions (AI generation failed or returned no questions)");
+      console.warn(
+        "⚠️ Using fallback questions (AI generation failed or returned no questions)"
+      );
       questions = [
         {
           id: 1,
@@ -205,7 +275,9 @@ async function generateQuestionsAndCompetitors(productName, category, region, we
 
     // Fallback if no competitors generated
     if (competitors.length === 0) {
-      console.warn("⚠️ Using fallback competitors (AI generation failed or returned no competitors)");
+      console.warn(
+        "⚠️ Using fallback competitors (AI generation failed or returned no competitors)"
+      );
       competitors = [
         {
           id: 1,
@@ -235,8 +307,6 @@ async function generateQuestionsAndCompetitors(productName, category, region, we
  */
 async function getOptimizationRecommendations(profileData) {
   try {
-    const model = getModel();
-
     const prompt = `Analyze this websiteUrl and product and provide 5 detailed content optimization recommendations to improve AI visibility and citation weight.
 
 Product: ${profileData.productName}
@@ -267,18 +337,38 @@ Focus on:
 
 Return ONLY valid JSON array.`;
 
-    const result = await model.generateContent(prompt);
-    const text = result.response.text();
+    // Use unified LLM service (defaults to OpenAI)
+    const text = await generateContent(prompt, {
+      temperature: 0.7,
+      maxTokens: 2000,
+    });
 
     let recommendations = [];
     let summary = "AI-powered analysis completed successfully.";
     let projectedScore = (profileData.analysisResult?.overallScore || 65) + 12;
 
     try {
-      const jsonMatch = text.match(/\[[\s\S]*\]/);
-      if (jsonMatch) {
-        recommendations = JSON.parse(jsonMatch[0]);
+      console.log(
+        "Raw LLM response for recommendations:",
+        text.substring(0, 500)
+      );
+
+      // Use safe JSON extraction
+      const parsedData = extractJSON(text);
+
+      // Handle both array and object with recommendations key
+      if (Array.isArray(parsedData)) {
+        recommendations = parsedData;
+      } else if (
+        parsedData.recommendations &&
+        Array.isArray(parsedData.recommendations)
+      ) {
+        recommendations = parsedData.recommendations;
+      } else {
+        console.warn("⚠️ No recommendations array found in parsed data");
       }
+
+      console.log(`✅ Extracted ${recommendations.length} recommendations`);
 
       // Extract summary if present
       const summaryMatch = text.match(/summary[:\s]+([^\n]+)/i);
@@ -286,7 +376,11 @@ Return ONLY valid JSON array.`;
         summary = summaryMatch[1];
       }
     } catch (parseError) {
-      console.error("Recommendations JSON parsing error:", parseError);
+      console.error(
+        "❌ Recommendations JSON parsing error:",
+        parseError.message
+      );
+      console.error("Raw response (first 500 chars):", text.substring(0, 500));
     }
 
     return {

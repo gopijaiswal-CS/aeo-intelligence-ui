@@ -8,6 +8,7 @@ const seoRoutes = require('./seoRoutes');
 const settingsRoutes = require('./settingsRoutes');
 const notificationRoutes = require('./notificationRoutes');
 const llmTextRoutes = require('./llmTextRoutes');
+const llmRoutes = require('./llmRoutes');
 
 // Mount routes
 router.use('/profiles', profileRoutes);
@@ -17,6 +18,7 @@ router.use('/seo', seoRoutes);
 router.use('/settings', settingsRoutes);
 router.use('/notifications', notificationRoutes);
 router.use('/llm-text', llmTextRoutes);
+router.use('/llm', llmRoutes);
 
 // Health check endpoint
 router.get('/health', (req, res) => {

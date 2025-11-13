@@ -1,8 +1,72 @@
 const axios = require('axios');
 const cheerio = require('cheerio');
-const { GoogleGenerativeAI } = require('@google/generative-ai');
+const { generateContent } = require('../config/llm');
 
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+/**
+ * Safely extract and parse JSON from LLM response
+ * Handles markdown code blocks, XML tags, and raw JSON
+ */
+function extractJSON(text) {
+  if (!text || typeof text !== "string") {
+    throw new Error("Invalid input: text must be a non-empty string");
+  }
+
+  // Try different extraction patterns
+  const patterns = [
+    // Markdown code blocks with json language tag
+    /```json\s*(\{[\s\S]*?\}|\[[\s\S]*?\])\s*```/,
+    // Markdown code blocks without language tag
+    /```\s*(\{[\s\S]*?\}|\[[\s\S]*?\])\s*```/,
+    // XML-style tags
+    /<json>\s*(\{[\s\S]*?\}|\[[\s\S]*?\])\s*<\/json>/,
+    // Raw JSON object
+    /\{[\s\S]*?\}/,
+    // Raw JSON array
+    /\[[\s\S]*?\]/,
+  ];
+
+  let jsonText = null;
+
+  // Try each pattern
+  for (const pattern of patterns) {
+    const match = text.match(pattern);
+    if (match) {
+      jsonText = match[1] || match[0];
+      break;
+    }
+  }
+
+  // If no pattern matched, try to use the entire text
+  if (!jsonText) {
+    jsonText = text.trim();
+  }
+
+  // Clean up the extracted text
+  jsonText = jsonText
+    .replace(/```json|```/g, "") // Remove markdown
+    .replace(/<\/?json>/g, "") // Remove XML tags
+    .trim();
+
+  // Validate that it looks like JSON
+  if (!jsonText.startsWith("{") && !jsonText.startsWith("[")) {
+    throw new Error(
+      "Extracted text does not appear to be valid JSON (must start with { or [)"
+    );
+  }
+
+  // Attempt to parse
+  try {
+    const parsed = JSON.parse(jsonText);
+    return parsed;
+  } catch (error) {
+    // Provide more context in the error
+    const preview =
+      jsonText.length > 200 ? jsonText.substring(0, 200) + "..." : jsonText;
+    throw new Error(
+      `Failed to parse JSON: ${error.message}\nExtracted text preview: ${preview}`
+    );
+  }
+}
 
 /**
  * Generate enhanced llm.txt with real website content analysis
@@ -124,12 +188,10 @@ async function crawlWebsiteContent(baseUrl) {
 }
 
 /**
- * Generate AI-powered summary using Gemini
+ * Generate AI-powered summary using unified LLM service
  */
 async function generateAISummary(profile, websiteContent) {
   try {
-    const model = genAI.getGenerativeModel({ model: 'gemini-pro' });
-
     const prompt = `Analyze this website and product information to create a comprehensive summary for an llm.txt file.
 
 Product: ${profile.productName}
@@ -163,25 +225,33 @@ Generate a comprehensive analysis in the following JSON format:
 
 Return ONLY valid JSON.`;
 
-    const result = await model.generateContent(prompt);
-    const text = result.response.text();
+    // Use unified LLM service (defaults to OpenAI)
+    const text = await generateContent(prompt, {
+      temperature: 0.7,
+      maxTokens: 2000
+    });
 
     // Parse JSON response
-    const jsonMatch = text.match(/\{[\s\S]*\}/);
-    if (jsonMatch) {
-      return JSON.parse(jsonMatch[0]);
+    try {
+      console.log("Raw LLM response for AI summary:", text.substring(0, 500));
+      const parsed = extractJSON(text);
+      console.log("✅ Successfully parsed AI summary");
+      return parsed;
+    } catch (parseError) {
+      console.error("❌ JSON parsing error:", parseError.message);
+      console.error("Raw response (first 500 chars):", text.substring(0, 500));
+      
+      // Fallback if parsing fails
+      return {
+        productSummary: `${profile.productName} is a ${profile.category} solution designed to help businesses improve their operations and achieve better results.`,
+        keyFeatures: ['Feature 1', 'Feature 2', 'Feature 3'],
+        targetAudience: 'Businesses and professionals',
+        useCases: ['Use case 1', 'Use case 2'],
+        differentiators: ['Unique capability'],
+        technicalHighlights: ['Technical feature'],
+        contentThemes: ['Product information', 'Documentation']
+      };
     }
-
-    // Fallback if parsing fails
-    return {
-      productSummary: `${profile.productName} is a ${profile.category} solution designed to help businesses improve their operations and achieve better results.`,
-      keyFeatures: ['Feature 1', 'Feature 2', 'Feature 3'],
-      targetAudience: 'Businesses and professionals',
-      useCases: ['Use case 1', 'Use case 2'],
-      differentiators: ['Unique capability'],
-      technicalHighlights: ['Technical feature'],
-      contentThemes: ['Product information', 'Documentation']
-    };
 
   } catch (error) {
     console.error('Error generating AI summary:', error);

@@ -1,4 +1,72 @@
-const { getModel } = require('../config/gemini');
+const { generateContent } = require('../config/llm');
+
+/**
+ * Safely extract and parse JSON from LLM response
+ * Handles markdown code blocks, XML tags, and raw JSON
+ */
+function extractJSON(text) {
+  if (!text || typeof text !== "string") {
+    throw new Error("Invalid input: text must be a non-empty string");
+  }
+
+  // Try different extraction patterns
+  const patterns = [
+    // Markdown code blocks with json language tag
+    /```json\s*(\{[\s\S]*?\}|\[[\s\S]*?\])\s*```/,
+    // Markdown code blocks without language tag
+    /```\s*(\{[\s\S]*?\}|\[[\s\S]*?\])\s*```/,
+    // XML-style tags
+    /<json>\s*(\{[\s\S]*?\}|\[[\s\S]*?\])\s*<\/json>/,
+    // Raw JSON object with specific keys
+    /\{[\s\S]*?"answers"[\s\S]*?\}/,
+    // Raw JSON object
+    /\{[\s\S]*?\}/,
+    // Raw JSON array
+    /\[[\s\S]*?\]/,
+  ];
+
+  let jsonText = null;
+
+  // Try each pattern
+  for (const pattern of patterns) {
+    const match = text.match(pattern);
+    if (match) {
+      jsonText = match[1] || match[0];
+      break;
+    }
+  }
+
+  // If no pattern matched, try to use the entire text
+  if (!jsonText) {
+    jsonText = text.trim();
+  }
+
+  // Clean up the extracted text
+  jsonText = jsonText
+    .replace(/```json|```/g, "") // Remove markdown
+    .replace(/<\/?json>/g, "") // Remove XML tags
+    .trim();
+
+  // Validate that it looks like JSON
+  if (!jsonText.startsWith("{") && !jsonText.startsWith("[")) {
+    throw new Error(
+      "Extracted text does not appear to be valid JSON (must start with { or [)"
+    );
+  }
+
+  // Attempt to parse
+  try {
+    const parsed = JSON.parse(jsonText);
+    return parsed;
+  } catch (error) {
+    // Provide more context in the error
+    const preview =
+      jsonText.length > 200 ? jsonText.substring(0, 200) + "..." : jsonText;
+    throw new Error(
+      `Failed to parse JSON: ${error.message}\nExtracted text preview: ${preview}`
+    );
+  }
+}
 
 /**
  * Get category-specific citation sources
@@ -48,8 +116,6 @@ function getCategorySpecificSources(category) {
  */
 async function queryLLMBatch(llmName, questions, productName, category, competitors) {
   try {
-    const model = getModel('gemini-2.5-flash');
-    
     // Create batch prompt with all questions
     const questionsText = questions.map((q, idx) => 
       `${idx + 1}. ${q.question}`
@@ -163,28 +229,23 @@ ${generalSources.join(', ')}
 - **Citation sources MUST be from the provided list above**
 </important>`;
 
-    const result = await model.generateContent(prompt);
-    const responseText = result.response.text();
+    // Use unified LLM service (defaults to OpenAI)
+    const responseText = await generateContent(prompt, {
+      temperature: 0.7,
+      maxTokens: 3000
+    });
     
     // Parse JSON response
     let parsedResponse;
     try {
-      // Try to extract JSON from markdown blocks or raw text
-      const jsonMatch = 
-        responseText.match(/```json\s*(\{[\s\S]*?\})\s*```/) ||
-        responseText.match(/```\s*(\{[\s\S]*?\})\s*```/) ||
-        responseText.match(/\{[\s\S]*?"answers"[\s\S]*?\}/);
+      console.log(`[${llmName}] Raw LLM response:`, responseText.substring(0, 500));
       
-            if (jsonMatch) {
-        let jsonText = jsonMatch[1] || jsonMatch[0];
-        jsonText = jsonText.replace(/```json|```/g, '').trim();
-        parsedResponse = JSON.parse(jsonText);
-      } else {
-        throw new Error('No JSON found in response');
-            }
-          } catch (parseError) {
-      console.error(`[${llmName}] JSON parsing error:`, parseError.message);
-      console.error('Response text:', responseText.substring(0, 500));
+      // Use safe JSON extraction
+      parsedResponse = extractJSON(responseText);
+      console.log(`[${llmName}] ✅ Successfully parsed response`);
+    } catch (parseError) {
+      console.error(`[${llmName}] ❌ JSON parsing error:`, parseError.message);
+      console.error('Response text (first 500 chars):', responseText.substring(0, 500));
       
       // Return empty responses as fallback
       parsedResponse = {
