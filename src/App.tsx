@@ -16,6 +16,7 @@ import ContentOptimizer from "./pages/ContentOptimizer";
 import QuestionManagement from "./pages/QuestionManagement";
 import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
+import Welcome from "./pages/Welcome";
 
 const queryClient = new QueryClient();
 
@@ -30,23 +31,29 @@ const App = () => {
           <Sonner position="top-right" />
           <BrowserRouter>
             <div className="flex min-h-screen w-full bg-background">
-              <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+              <Sidebar
+                isOpen={sidebarOpen}
+                onClose={() => setSidebarOpen(false)}
+              />
               <div className="flex-1 flex flex-col w-full">
                 <Navbar onMenuClick={() => setSidebarOpen(true)} />
                 <main className="flex-1">
-                <Routes>
-                  <Route path="/" element={<Dashboard />} />
-                  <Route path="/dashboard" element={<Dashboard />} />
-                  <Route path="/create-profile" element={<CreateProfile />} />
-                  <Route path="/profile/:id" element={<ProfileAnalysis />} />
-                  <Route path="/product/:id" element={<ProductDetail />} />
-                  <Route path="/products" element={<Dashboard />} />
-                  <Route path="/competitors" element={<CompetitorComparison />} />
-                  <Route path="/optimizer" element={<ContentOptimizer />} />
-                  <Route path="/questions" element={<QuestionManagement />} />
-                  <Route path="/settings" element={<Settings />} />
-                  <Route path="*" element={<NotFound />} />
-                </Routes>
+                  <Routes>
+                    <Route path="/" element={<Welcome />} />
+                    <Route path="/dashboard" element={<Dashboard />} />
+                    <Route path="/create-profile" element={<CreateProfile />} />
+                    <Route path="/profile/:id" element={<ProfileAnalysis />} />
+                    <Route path="/product/:id" element={<ProductDetail />} />
+                    <Route path="/products" element={<Dashboard />} />
+                    <Route
+                      path="/competitors"
+                      element={<CompetitorComparison />}
+                    />
+                    <Route path="/optimizer" element={<ContentOptimizer />} />
+                    <Route path="/questions" element={<QuestionManagement />} />
+                    <Route path="/settings" element={<Settings />} />
+                    <Route path="*" element={<NotFound />} />
+                  </Routes>
                 </main>
               </div>
             </div>
