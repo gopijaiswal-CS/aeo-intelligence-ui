@@ -50,7 +50,10 @@ const App = () => {
                       element={<CompetitorComparison />}
                     />
                     <Route path="/optimizer" element={<ContentOptimizer />} />
-                    <Route path="/questions" element={<QuestionManagement />} />
+                    <Route
+                      path="/questions/:profileId"
+                      element={<QuestionManagement />}
+                    />
                     <Route path="/settings" element={<Settings />} />
                     <Route path="*" element={<NotFound />} />
                   </Routes>

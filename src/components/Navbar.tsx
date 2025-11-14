@@ -210,7 +210,10 @@ export const Navbar = ({ onMenuClick }: NavbarProps) => {
   return (
     <nav className="sticky top-0 z-50 w-full border-b border-border bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/60">
       <div className="flex h-16 items-center px-4 lg:px-6">
-        <div className="flex items-center gap-2 mr-4">
+        <div
+          className="flex items-center gap-2 mr-4 cursor-pointer"
+          onClick={() => navigate("/")}
+        >
           <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-orange-500 via-orange-400 to-blue-500 flex items-center justify-center relative overflow-hidden">
             <svg
               width="24"
@@ -258,10 +261,7 @@ export const Navbar = ({ onMenuClick }: NavbarProps) => {
               </g>
             </svg>
           </div>
-          <span
-            className="font-semibold text-lg hidden sm:inline bg-gradient-to-r from-orange-500 via-orange-400 to-blue-500 bg-clip-text text-transparent"
-            onClick={() => navigate("/")}
-          >
+          <span className="font-semibold text-lg hidden sm:inline bg-gradient-to-r from-orange-500 via-orange-400 to-blue-500 bg-clip-text text-transparent">
             StackIQ
           </span>
         </div>
